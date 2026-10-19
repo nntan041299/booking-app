@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  booking-db:
+    image: postgres:16.11-alpine
+    container_name: booking-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: booking-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - booking-db:/var/lib/postgresql/data
+
+volumes:
+  booking-db:
