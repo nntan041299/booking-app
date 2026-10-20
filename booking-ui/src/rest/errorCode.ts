@@ -19,6 +19,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   "00013": "Invalid refresh token, please sign in again",
   "00014": "Sign-in session expired, please try again",
   "00015": "Invalid request format",
+  "00016": "Service name already exists",
 };
 
 interface ApiErrorBody {

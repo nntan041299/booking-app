@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
-        return build(HttpStatus.FORBIDDEN, ex);
+        return build(HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED);
     }
 
     @ExceptionHandler(Exception.class)

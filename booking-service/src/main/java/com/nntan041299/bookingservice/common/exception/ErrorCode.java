@@ -29,6 +29,7 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN("00013", "Invalid refresh token"),
     INVALID_OAUTH_STATE("00014", "Invalid or expired OAuth state"),
     INVALID_REQUEST_FORMAT("00015", "Invalid request format"),
+    SERVICE_NAME_ALREADY_EXISTS("00016", "Service name already exists"),
     INTERNAL_ERROR("99999", "An unexpected error occurred");
 
     private final String code;
