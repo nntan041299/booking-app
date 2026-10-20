@@ -2,6 +2,7 @@ package com.nntan041299.bookingservice.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nntan041299.bookingservice.common.dto.ErrorResponse;
+import com.nntan041299.bookingservice.common.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
                        HttpServletResponse response,
                        AccessDeniedException ex) throws IOException {
         byte[] body = objectMapper.writeValueAsBytes(
-                new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage()));
+                ErrorResponse.of(HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED));
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setContentLength(body.length);

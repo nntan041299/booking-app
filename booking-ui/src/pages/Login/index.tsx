@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { FaApple, FaFacebookF, FaGithub, FaGoogle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import type { AxiosError } from "axios";
 
 import Loading from "@/components/Loading";
 import { useLogin } from "@/hook/useLogin";
 import { getGoogleLoginUrl } from "@/service/auth";
+import { getErrorMessage } from "@/rest";
 
 interface LoginErrors {
   username: string;
@@ -46,11 +46,6 @@ const LoginPage = () => {
     if (provider === "google") window.location.href = getGoogleLoginUrl();
   }
 
-  const apiError = error as AxiosError<{
-    status: number;
-    message: string;
-  }> | null;
-
   return (
     <div className="auth-screen">
       <Loading isLoading={isPending} />
@@ -71,8 +66,7 @@ const LoginPage = () => {
 
           {isError && (
             <div className="alert-error mb-4">
-              {apiError?.response?.data?.message ||
-                "Server error, try again later"}
+              {getErrorMessage(error)}
             </div>
           )}
 

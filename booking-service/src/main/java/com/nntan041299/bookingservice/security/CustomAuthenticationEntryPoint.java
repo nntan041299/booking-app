@@ -2,6 +2,7 @@ package com.nntan041299.bookingservice.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nntan041299.bookingservice.common.dto.ErrorResponse;
+import com.nntan041299.bookingservice.common.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                          HttpServletResponse response,
                          AuthenticationException ex) throws IOException {
         byte[] body = objectMapper.writeValueAsBytes(
-                new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Authentication required"));
+                ErrorResponse.of(HttpStatus.UNAUTHORIZED, ErrorCode.AUTHENTICATION_REQUIRED));
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setContentLength(body.length);

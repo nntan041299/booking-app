@@ -1,5 +1,6 @@
 package com.nntan041299.bookingservice.auth.service.impl;
 
+import com.nntan041299.bookingservice.common.exception.ErrorCode;
 import com.nntan041299.bookingservice.auth.client.GoogleTokenRetrieveClient;
 import com.nntan041299.bookingservice.auth.client.GoogleUserInfoClient;
 import com.nntan041299.bookingservice.auth.dto.GoogleToken;
@@ -85,7 +86,7 @@ public class GoogleOauth2Impl extends AbstractAuthenticationService implements I
     @Override
     public TokenResponse getAccessToken(String code, String state) {
         if (!oAuthStateStore.validateAndConsume(state)) {
-            throw new IllegalArgumentException("Invalid or expired OAuth state");
+            throw new IllegalArgumentException(ErrorCode.INVALID_OAUTH_STATE.name());
         }
 
         GoogleTokenRequest tokenRequest = GoogleTokenRequest.builder()
