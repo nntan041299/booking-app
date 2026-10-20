@@ -5,6 +5,11 @@ import { selectUser } from "@/redux/user/selectors";
 import { setUserInfo } from "@/redux/user";
 import { updateUserInfo } from "@/service/user";
 import Layout from "@/layouts/Layout";
+import Button from "@/components/Button";
+import Field from "@/components/Field";
+import Input from "@/components/Input";
+import PasswordInput from "@/components/PasswordInput";
+import SectionCard from "@/components/SectionCard";
 import { AppDispatch } from "@/redux/store";
 
 interface FormState {
@@ -16,109 +21,6 @@ interface PasswordFormState {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
-}
-
-function SectionCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-surface-200 overflow-hidden">
-      <div className="px-6 py-4 border-b border-surface-100">
-        <h2
-          className="text-sm font-semibold text-surface-700 uppercase tracking-widest"
-          style={{ fontFamily: "var(--font-sans)" }}
-        >
-          {title}
-        </h2>
-      </div>
-      <div className="px-6 py-5">{children}</div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-  error,
-}: {
-  label: string;
-  children: React.ReactNode;
-  error?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label
-        className="text-sm font-medium text-surface-700"
-        style={{ fontFamily: "var(--font-sans)" }}
-      >
-        {label}
-      </label>
-      {children}
-      {error && (
-        <p
-          className="text-xs text-red-500"
-          style={{ fontFamily: "var(--font-sans)" }}
-        >
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className={`
-        w-full px-3.5 py-2.5 rounded-xl border border-surface-200 text-sm text-surface-900
-        bg-white placeholder:text-surface-400
-        focus:outline-none focus:ring-2 focus:ring-ink-900/20 focus:border-ink-900/40
-        disabled:bg-surface-50 disabled:text-surface-400
-        transition-all duration-150
-        ${props.className ?? ""}
-      `}
-      style={{ fontFamily: "var(--font-sans)" }}
-    />
-  );
-}
-
-function PasswordInput({
-  value,
-  onChange,
-  placeholder,
-  name,
-}: {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
-  name: string;
-}) {
-  const [show, setShow] = useState(false);
-  return (
-    <div className="relative">
-      <Input
-        type={show ? "text" : "password"}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="pr-10"
-      />
-      <button
-        type="button"
-        onClick={() => setShow((p) => !p)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600 transition-colors cursor-pointer"
-        tabIndex={-1}
-      >
-        <i className={`pi ${show ? "pi-eye-slash" : "pi-eye"} text-sm`} />
-      </button>
-    </div>
-  );
 }
 
 const Account = () => {
@@ -153,6 +55,7 @@ const Account = () => {
           firstName: parts[0] ?? "",
           lastName: parts.slice(1).join(" ") || undefined,
           avatarUrl: user.avatarUrl,
+          role: data.role,
         }),
       );
       setProfileSuccess("Profile updated.");
@@ -297,7 +200,7 @@ const Account = () => {
                 placeholder="Your full name"
               />
             </Field>
-            <Field label="Email" error={undefined}>
+            <Field label="Email">
               <Input
                 name="email"
                 type="email"
@@ -324,16 +227,9 @@ const Account = () => {
             )}
 
             <div className="flex justify-end pt-1">
-              <button
-                type="submit"
-                disabled={savingProfile}
-                className="px-5 py-2.5 rounded-xl bg-ink-900 text-parchment text-sm font-semibold
-                           hover:bg-ink-800 transition-colors duration-150 cursor-pointer
-                           disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ fontFamily: "var(--font-sans)" }}
-              >
+              <Button type="submit" disabled={savingProfile}>
                 {savingProfile ? "Saving…" : "Save changes"}
-              </button>
+              </Button>
             </div>
           </form>
         </SectionCard>
@@ -384,16 +280,9 @@ const Account = () => {
             )}
 
             <div className="flex justify-end pt-1">
-              <button
-                type="submit"
-                disabled={savingPassword}
-                className="px-5 py-2.5 rounded-xl bg-ink-900 text-parchment text-sm font-semibold
-                           hover:bg-ink-800 transition-colors duration-150 cursor-pointer
-                           disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ fontFamily: "var(--font-sans)" }}
-              >
+              <Button type="submit" disabled={savingPassword}>
                 {savingPassword ? "Saving…" : "Change password"}
-              </button>
+              </Button>
             </div>
           </form>
         </SectionCard>

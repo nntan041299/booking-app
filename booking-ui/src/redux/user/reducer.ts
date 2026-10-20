@@ -8,6 +8,7 @@ export interface UserState {
   firstName: string | undefined;
   lastName: string | undefined;
   avatarUrl: string | undefined;
+  role: string | undefined;
 }
 
 interface UserInfoRetrieveSuccessAction {
@@ -23,7 +24,8 @@ const INITIAL_STATE: UserState = {
   email: undefined,
   firstName: undefined,
   lastName: undefined,
-  avatarUrl: undefined
+  avatarUrl: undefined,
+  role: undefined,
 };
 
 const userReducer = (
@@ -39,7 +41,8 @@ const userReducer = (
         email: payload.email,
         firstName: payload.firstName,
         lastName: payload.lastName,
-        avatarUrl: payload.avatarUrl
+        avatarUrl: payload.avatarUrl,
+        role: payload.role,
       };
     }
     default:
