@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -118,7 +119,10 @@ public class AuthService extends AbstractAuthenticationService {
     }
 
     public TokenResponse login(LoginRequest request) {
-        UserDetails user = userDetailsService.loadUserByUsername(request.getUsername());
+        String identifier = request.getUsername();
+        UserDetails user = userRepository.findByUsername(identifier)
+                .or(() -> userRepository.findByEmail(identifier))
+                .orElseThrow(() -> new UsernameNotFoundException(ErrorCode.USER_NOT_FOUND.name()));
 
         if (!user.isEnabled()) {
             throw new DisabledException(ErrorCode.ACCOUNT_DISABLED.name());
