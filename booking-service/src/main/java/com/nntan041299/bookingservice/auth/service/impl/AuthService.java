@@ -64,7 +64,7 @@ public class AuthService extends AbstractAuthenticationService {
                 .email(request.getEmail())
                 .fullName(request.getFullName())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.USER)
+                .role(Role.CUSTOMER)
                 .isActive(true)
                 .build();
 
