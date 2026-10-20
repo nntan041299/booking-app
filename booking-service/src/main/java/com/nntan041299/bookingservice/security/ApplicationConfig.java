@@ -1,6 +1,7 @@
 package com.nntan041299.bookingservice.security;
 
 import com.nntan041299.bookingservice.auth.repository.UserRepository;
+import com.nntan041299.bookingservice.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,7 +21,7 @@ public class ApplicationConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException(ErrorCode.USER_NOT_FOUND.name()));
     }
 
     @Bean

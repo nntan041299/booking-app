@@ -74,7 +74,14 @@ axios.interceptors.response.use(
       ENDPOINT.REFRESH_TOKEN,
     );
 
+    // A 401 from these means bad credentials, not an expired session: let the
+    // caller show the error instead of refreshing the token / reloading the page.
+    const isPublicAuthCall = [ENDPOINT.LOGIN, ENDPOINT.SIGN_UP].some((path) =>
+      originalRequest?.url?.includes(path),
+    );
+
     if (
+      isPublicAuthCall ||
       error.response?.status !== 401 ||
       !originalRequest ||
       originalRequest._retry ||
