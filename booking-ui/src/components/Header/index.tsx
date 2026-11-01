@@ -1,6 +1,9 @@
 import { useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { signOut } from "@/service/auth";
+import { useAuth } from "@/context/AuthProvider";
 import { selectUser } from "@/redux/user/selectors";
 import { useClickOutside } from "@/hook/useClickOutside";
 
@@ -13,6 +16,13 @@ export default function Header({ onMenuToggle }: HeaderProps) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { removeToken } = useAuth();
+
+  const { mutate: handleSignOut, isPending } = useMutation({
+    mutationFn: signOut,
+    onSuccess: () => removeToken(),
+    onError: () => removeToken(),
+  });
 
   useClickOutside(dropdownRef, () => setOpen(false));
 
@@ -85,6 +95,17 @@ export default function Header({ onMenuToggle }: HeaderProps) {
               >
                 <i className="pi pi-user text-sm text-surface-400" />
                 Account settings
+              </button>
+              <button
+                onClick={() => handleSignOut()}
+                disabled={isPending}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-surface-700
+                           hover:bg-surface-50 transition-colors duration-150 cursor-pointer text-left
+                           disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                <i className="pi pi-sign-out text-sm text-surface-400" />
+                {isPending ? "Signing out…" : "Sign out"}
               </button>
             </div>
           </div>

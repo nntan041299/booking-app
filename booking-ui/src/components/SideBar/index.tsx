@@ -1,7 +1,4 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
-import { signOut } from "@/service/auth";
-import { useAuth } from "@/context/AuthProvider";
 
 interface NavItem {
   path: string;
@@ -19,13 +16,6 @@ interface SideBarProps {
 export default function SideBar({ open, onClose }: SideBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { removeToken } = useAuth();
-
-  const { mutate: handleSignOut, isPending } = useMutation({
-    mutationFn: signOut,
-    onSuccess: () => removeToken(),
-    onError: () => removeToken(),
-  });
 
   const handleNav = (path: string) => {
     navigate(path);
@@ -81,22 +71,6 @@ export default function SideBar({ open, onClose }: SideBarProps) {
           );
         })}
       </nav>
-
-      {/* Sign out */}
-      <div className="px-3 py-4 border-t border-white/8">
-        <button
-          onClick={() => handleSignOut()}
-          disabled={isPending}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                     text-white/40 hover:bg-white/6 hover:text-white/70
-                     transition-colors duration-150 cursor-pointer
-                     disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ fontFamily: "var(--font-sans)" }}
-        >
-          <i className="pi pi-sign-out text-sm" />
-          {isPending ? "Signing out…" : "Sign out"}
-        </button>
-      </div>
     </aside>
   );
 
