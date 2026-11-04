@@ -3,12 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { selectUser } from "@/redux/user/selectors";
 import Layout from "@/layouts/Layout";
 import Button from "@/components/Button";
+import CustomerDashboard from "@/pages/customer/Dashboard";
 
 const Home = () => {
   const navigate = useNavigate();
   const { username, email, firstName, lastName, role } =
     useSelector(selectUser);
   const fullName = [firstName, lastName].filter(Boolean).join(" ") || username;
+
+  if (role === "CUSTOMER") return <CustomerDashboard />;
 
   return (
     <Layout>
