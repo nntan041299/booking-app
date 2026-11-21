@@ -33,6 +33,19 @@
   /* ── Parchment (warm off-white) ── */
   --color-parchment: #f7f4ee;
 
+  /* ── Spa admin (from the design canvas) ── */
+  --color-spa-canvas: #f6f3ee;
+  --color-spa-line: #e4ded4;
+  --color-spa-ink: #1f2a26;
+  --color-spa-text: #3c4a44;
+  --color-spa-muted: #5e6b65;
+  --color-spa-green: #2f5d50;
+  --color-spa-green-50: #e3eee9;
+  --color-spa-divider: #efeae0;
+  --color-spa-sand: #f3e3d6;
+  --color-spa-sand-ink: #6b3a1e;
+  --color-spa-danger: #a3372b;
+
   /* ── Semantic aliases ── */
   --color-text-primary: var(--color-surface-900);
   --color-text-secondary: var(--color-surface-500);
@@ -53,6 +66,7 @@
   /* ── Typography ── */
   --font-display: "Inter", sans-serif;
   --font-sans: "Inter", sans-serif;
+  --font-heading: "Fraunces", serif;
   --font-brand: "Quicksand", sans-serif;
 
   /* ── Border radius ── */

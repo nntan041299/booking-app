@@ -1,28 +1,68 @@
+import { ReactNode } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { selectUser } from "@/redux/user/selectors";
 
 interface NavItem {
   path: string;
   label: string;
-  icon: string;
+  icon: ReactNode;
   /** Only show the item to users with this role; shown to everyone when omitted. */
   role?: string;
 }
 
+const NavIcon = ({ children }: { children: ReactNode }) => (
+  <svg
+    aria-hidden="true"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="flex-shrink-0"
+  >
+    {children}
+  </svg>
+);
+
 const NAV_ITEMS: NavItem[] = [
-  { path: "/", label: "Home", icon: "pi-th-large" },
   {
-    path: "/admin/services",
-    label: "Services",
-    icon: "pi-list",
-    role: "ADMIN",
+    path: "/",
+    label: "Dashboard",
+    icon: (
+      <NavIcon>
+        <rect x="3.5" y="3.5" width="7" height="8" rx="1.5" />
+        <rect x="13.5" y="3.5" width="7" height="5" rx="1.5" />
+        <rect x="13.5" y="11.5" width="7" height="9" rx="1.5" />
+        <rect x="3.5" y="14.5" width="7" height="6" rx="1.5" />
+      </NavIcon>
+    ),
   },
   {
     path: "/admin/employees",
     label: "Employees",
-    icon: "pi-users",
     role: "ADMIN",
+    icon: (
+      <NavIcon>
+        <circle cx="9" cy="8" r="3.5" />
+        <path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
+        <path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.4c2 .7 3.5 2.6 3.5 5.6" />
+      </NavIcon>
+    ),
+  },
+  {
+    path: "/admin/services",
+    label: "Services",
+    role: "ADMIN",
+    icon: (
+      <NavIcon>
+        <path d="M12 21c-4.5-2-7-5.5-7-9.5C5 8 7.5 5 12 3c4.5 2 7 5 7 8.5 0 4-2.5 7.5-7 9.5z" />
+        <path d="M12 8v13" />
+      </NavIcon>
+    ),
   },
 ];
 
@@ -32,31 +72,33 @@ interface SideBarProps {
 }
 
 export default function SideBar({ open, onClose }: SideBarProps) {
-  const navigate = useNavigate();
-  const location = useLocation();
   const { role } = useSelector(selectUser);
   const navItems = NAV_ITEMS.filter((item) => !item.role || item.role === role);
 
-  const handleNav = (path: string) => {
-    navigate(path);
-    onClose?.();
-  };
-
   const sidebarContent = (
-    <aside className="w-60 h-full flex flex-col flex-shrink-0 bg-ink-900 select-none">
+    <aside
+      aria-label="Admin"
+      className="w-[260px] h-full flex flex-col flex-shrink-0 gap-7 bg-white border-r border-spa-line px-4 py-7 select-none"
+    >
       {/* Brand */}
-      <div className="h-14 flex items-center justify-between px-5 border-b border-white/8 flex-shrink-0">
-        <span
-          className="text-lg font-bold tracking-tight text-parchment"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          App <span className="text-gold-500">Name</span>
-        </span>
+      <div className="flex items-start justify-between px-3">
+        <div>
+          <div
+            className="text-[22px] font-semibold leading-tight text-spa-ink"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Spa Admin
+          </div>
+          <div className="text-[13px] text-spa-muted mt-0.5">
+            Booking console
+          </div>
+        </div>
         {/* Close button — mobile only */}
         {onClose && (
           <button
+            type="button"
             onClick={onClose}
-            className="md:hidden text-white/50 hover:text-white transition-colors p-1 cursor-pointer"
+            className="md:hidden text-spa-muted hover:text-spa-ink transition-colors p-1 cursor-pointer"
             aria-label="Close menu"
           >
             <i className="pi pi-times text-base" />
@@ -65,31 +107,31 @@ export default function SideBar({ open, onClose }: SideBarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ path, label, icon }) => {
-          const active = location.pathname === path;
-          return (
-            <button
-              key={path}
-              onClick={() => handleNav(path)}
-              className={`
-                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                transition-colors duration-150 cursor-pointer text-left
-                ${
-                  active
-                    ? "bg-white/10 text-white"
-                    : "text-white/50 hover:bg-white/6 hover:text-white/80"
-                }
-              `}
-              style={{ fontFamily: "var(--font-sans)" }}
-            >
-              <i
-                className={`pi ${icon} text-sm ${active ? "text-gold-400" : ""}`}
-              />
-              {label}
-            </button>
-          );
-        })}
+      <nav
+        aria-label="Main"
+        className="flex flex-col gap-1 overflow-y-auto"
+        style={{ fontFamily: "var(--font-sans)" }}
+      >
+        {navItems.map(({ path, label, icon }) => (
+          <NavLink
+            key={path}
+            to={path}
+            end
+            onClick={() => onClose?.()}
+            className={({ isActive }) =>
+              `flex items-center gap-3 p-3 rounded-[10px] text-[15px] no-underline
+               transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green
+               ${
+                 isActive
+                   ? "bg-spa-green-50 text-spa-green font-semibold"
+                   : "text-spa-text font-medium hover:bg-spa-canvas"
+               }`
+            }
+          >
+            {icon}
+            {label}
+          </NavLink>
+        ))}
       </nav>
     </aside>
   );
