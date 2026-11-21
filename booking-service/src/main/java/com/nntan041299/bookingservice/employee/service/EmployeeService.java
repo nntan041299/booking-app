@@ -50,6 +50,13 @@ public class EmployeeService {
             throw new IllegalArgumentException(ErrorCode.EMAIL_ALREADY_EXISTS.name());
         }
 
+        if (request.getWorkingHours() != null) {
+            validateWorkingHours(request.getWorkingHours());
+        }
+        if (request.getServiceIds() != null) {
+            validateServices(request.getServiceIds());
+        }
+
         User user = userRepository.save(User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
@@ -62,8 +69,15 @@ public class EmployeeService {
         Employee employee = Employee.builder()
                 .userId(user.getId())
                 .fullName(request.getFullName().trim())
+                .bio(request.getBio())
                 .avatarUrl(request.getAvatarUrl())
                 .build();
+        if (request.getWorkingHours() != null) {
+            replaceWorkingHours(employee, request.getWorkingHours());
+        }
+        if (request.getServiceIds() != null) {
+            replaceServices(employee, request.getServiceIds());
+        }
 
         return employeeMapper.toResponse(employeeRepository.save(employee));
     }
@@ -134,10 +148,14 @@ public class EmployeeService {
         });
     }
 
-    private void replaceServices(Employee employee, Set<Long> serviceIds) {
+    private void validateServices(Set<Long> serviceIds) {
         if (serviceRepository.findAllById(serviceIds).size() != serviceIds.size()) {
             throw new IllegalArgumentException(ErrorCode.SERVICE_NOT_FOUND.name());
         }
+    }
+
+    private void replaceServices(Employee employee, Set<Long> serviceIds) {
+        validateServices(serviceIds);
         employee.getServiceIds().clear();
         employee.getServiceIds().addAll(serviceIds);
     }

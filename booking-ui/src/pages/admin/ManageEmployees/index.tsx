@@ -20,8 +20,7 @@ import {
   type EmployeeItem,
 } from "@/service/employee";
 import { getErrorMessage } from "@/rest";
-import CreateEmployeeModal from "./CreateEmployeeModal";
-import EditEmployeeModal from "./EditEmployeeModal";
+import EmployeeFormModal from "./EmployeeFormModal";
 import { DAYS } from "./constants";
 
 type StatusFilter = "all" | "active" | "inactive";
@@ -48,8 +47,10 @@ const ManageEmployees = () => {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(0);
-  const [creating, setCreating] = useState(false);
-  const [editing, setEditing] = useState<EmployeeItem | null>(null);
+  // undefined = closed, null = creating, otherwise editing that employee
+  const [editing, setEditing] = useState<EmployeeItem | null | undefined>(
+    undefined,
+  );
   const [removing, setRemoving] = useState<EmployeeItem | null>(null);
 
   const { data, isLoading, isError } = useQuery({
@@ -112,7 +113,7 @@ const ManageEmployees = () => {
               hours.
             </p>
           </div>
-          <Button onClick={() => setCreating(true)} className="flex-shrink-0">
+          <Button onClick={() => setEditing(null)} className="flex-shrink-0">
             <i className="pi pi-plus text-xs mr-2" />
             Add employee
           </Button>
@@ -234,22 +235,12 @@ const ManageEmployees = () => {
         )}
       </div>
 
-      {creating && (
-        <CreateEmployeeModal
-          onClose={() => setCreating(false)}
-          onSaved={() => {
-            setCreating(false);
-            refresh();
-          }}
-        />
-      )}
-
-      {editing && (
-        <EditEmployeeModal
+      {editing !== undefined && (
+        <EmployeeFormModal
           employee={editing}
-          onClose={() => setEditing(null)}
+          onClose={() => setEditing(undefined)}
           onSaved={() => {
-            setEditing(null);
+            setEditing(undefined);
             refresh();
           }}
         />

@@ -5,7 +5,10 @@ export interface CreateEmployeePayload {
   username: string;
   email: string;
   password: string;
+  bio?: string;
   avatarUrl?: string;
+  workingHours?: WorkingHours[];
+  serviceIds?: number[];
 }
 
 export const createEmployee = async (payload: CreateEmployeePayload) => {

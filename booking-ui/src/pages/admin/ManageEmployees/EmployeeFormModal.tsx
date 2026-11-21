@@ -4,9 +4,11 @@ import Button from "@/components/Button";
 import Field from "@/components/Field";
 import Input from "@/components/Input";
 import Modal from "@/components/Modal";
+import PasswordInput from "@/components/PasswordInput";
 import Textarea from "@/components/Textarea";
 import { searchAdminServices } from "@/service/catalog";
 import {
+  createEmployee,
   updateEmployee,
   type EmployeeItem,
   type WorkingHours,
@@ -14,8 +16,9 @@ import {
 import { getErrorMessage } from "@/rest";
 import { DAYS, toTimeInput } from "./constants";
 
-interface EditEmployeeModalProps {
-  employee: EmployeeItem;
+interface EmployeeFormModalProps {
+  /** The employee being edited, or null to create a new one. */
+  employee: EmployeeItem | null;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -40,18 +43,24 @@ const validateHours = (hours: WorkingHours[]): string => {
   return "";
 };
 
-export default function EditEmployeeModal({
+export default function EmployeeFormModal({
   employee,
   onClose,
   onSaved,
-}: EditEmployeeModalProps) {
-  const [fullName, setFullName] = useState(employee.fullName);
-  const [bio, setBio] = useState(employee.bio ?? "");
-  const [avatarUrl, setAvatarUrl] = useState(employee.avatarUrl ?? "");
-  const [active, setActive] = useState(employee.active);
-  const [serviceIds, setServiceIds] = useState<number[]>(employee.serviceIds);
+}: EmployeeFormModalProps) {
+  const isEdit = employee !== null;
+  const [fullName, setFullName] = useState(employee?.fullName ?? "");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [bio, setBio] = useState(employee?.bio ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(employee?.avatarUrl ?? "");
+  const [active, setActive] = useState(employee?.active ?? true);
+  const [serviceIds, setServiceIds] = useState<number[]>(
+    employee?.serviceIds ?? [],
+  );
   const [hours, setHours] = useState<WorkingHours[]>(
-    employee.workingHours.map((h) => ({
+    (employee?.workingHours ?? []).map((h) => ({
       dayOfWeek: h.dayOfWeek,
       startTime: toTimeInput(h.startTime),
       endTime: toTimeInput(h.endTime),
@@ -73,14 +82,25 @@ export default function EditEmployeeModal({
     reset,
   } = useMutation({
     mutationFn: () =>
-      updateEmployee(employee.id, {
-        fullName: fullName.trim(),
-        bio: bio.trim(),
-        avatarUrl: avatarUrl.trim(),
-        active,
-        workingHours: hours,
-        serviceIds,
-      }),
+      isEdit
+        ? updateEmployee(employee.id, {
+            fullName: fullName.trim(),
+            bio: bio.trim(),
+            avatarUrl: avatarUrl.trim(),
+            active,
+            workingHours: hours,
+            serviceIds,
+          })
+        : createEmployee({
+            fullName: fullName.trim(),
+            username: username.trim(),
+            email: email.trim(),
+            password,
+            bio: bio.trim() || undefined,
+            avatarUrl: avatarUrl.trim() || undefined,
+            workingHours: hours,
+            serviceIds,
+          }),
     onSuccess: onSaved,
   });
 
@@ -108,6 +128,15 @@ export default function EditEmployeeModal({
     if (!fullName.trim()) return setFormError("Full name is required");
     if (fullName.trim().length > 100)
       return setFormError("Full name must not exceed 100 characters");
+    if (!isEdit) {
+      const name = username.trim();
+      if (name.length < 3 || name.length > 50)
+        return setFormError("Username must be between 3 and 50 characters");
+      if (!/^\S+@\S+\.\S+$/.test(email.trim()))
+        return setFormError("Enter a valid email");
+      if (password.length < 8)
+        return setFormError("Password must be at least 8 characters");
+    }
     if (avatarUrl.length > 255)
       return setFormError("Avatar URL must not exceed 255 characters");
     const hoursError = validateHours(hours);
@@ -120,7 +149,7 @@ export default function EditEmployeeModal({
   );
 
   return (
-    <Modal title="Edit employee" onClose={onClose}>
+    <Modal title={isEdit ? "Edit employee" : "Add employee"} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-5">
         <Field label="Full name" htmlFor="fullName">
           <Input
@@ -133,6 +162,49 @@ export default function EditEmployeeModal({
             disabled={isPending}
           />
         </Field>
+        {!isEdit && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Username" htmlFor="username">
+                <Input
+                  id="username"
+                  value={username}
+                  autoComplete="off"
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    touch();
+                  }}
+                  disabled={isPending}
+                />
+              </Field>
+              <Field label="Email" htmlFor="email">
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  autoComplete="off"
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    touch();
+                  }}
+                  disabled={isPending}
+                />
+              </Field>
+            </div>
+            <Field label="Password" htmlFor="password">
+              <PasswordInput
+                id="password"
+                value={password}
+                autoComplete="new-password"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  touch();
+                }}
+                disabled={isPending}
+              />
+            </Field>
+          </>
+        )}
         <Field label="Bio (optional)" htmlFor="bio">
           <Textarea
             id="bio"
@@ -157,21 +229,23 @@ export default function EditEmployeeModal({
           />
         </Field>
 
-        <label
-          className="flex items-center gap-2 text-sm text-surface-700 cursor-pointer"
-          style={{ fontFamily: "var(--font-sans)" }}
-        >
-          <input
-            type="checkbox"
-            checked={active}
-            disabled={isPending}
-            onChange={(e) => {
-              setActive(e.target.checked);
-              touch();
-            }}
-          />
-          Active (can sign in and be booked)
-        </label>
+        {isEdit && (
+          <label
+            className="flex items-center gap-2 text-sm text-surface-700 cursor-pointer"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
+            <input
+              type="checkbox"
+              checked={active}
+              disabled={isPending}
+              onChange={(e) => {
+                setActive(e.target.checked);
+                touch();
+              }}
+            />
+            Active (can sign in and be booked)
+          </label>
+        )}
 
         <fieldset className="space-y-2">
           <legend
@@ -302,7 +376,7 @@ export default function EditEmployeeModal({
             Cancel
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending ? "Saving…" : "Save changes"}
+            {isPending ? "Saving…" : isEdit ? "Save changes" : "Add employee"}
           </Button>
         </div>
       </form>
