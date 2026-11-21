@@ -21,7 +21,7 @@ interface DropdownProps {
   openUp?: boolean;
   /** Extra classes for the trigger button, e.g. a min width or font size. */
   className?: string;
-  /** Tailwind width class for the menu. */
+  /** Tailwind width class for the menu. Defaults to the trigger width so it never overflows the page. */
   menuWidth?: string;
   disabled?: boolean;
 }
@@ -35,7 +35,7 @@ export default function Dropdown({
   searchable = false,
   openUp = false,
   className = "",
-  menuWidth = "w-full min-w-44",
+  menuWidth = "w-full",
   disabled,
 }: DropdownProps) {
   const [open, setOpen] = useState(false);
@@ -170,9 +170,11 @@ export default function Dropdown({
                         </svg>
                       )}
                     </span>
-                    <span className="flex-1 min-w-0">{o.label}</span>
+                    <span className="flex-1 min-w-0 truncate" title={o.label}>
+                      {o.label}
+                    </span>
                     {o.hint && (
-                      <span className="text-[13px] font-normal text-spa-muted">
+                      <span className="flex-shrink-0 text-[13px] font-normal text-spa-muted">
                         {o.hint}
                       </span>
                     )}

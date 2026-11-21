@@ -208,7 +208,7 @@ const ManageEmployees = () => {
                          focus:outline-2 focus:outline-offset-2 focus:outline-spa-green"
             />
           </div>
-          <div className="flex flex-col gap-1.5 basis-55 min-w-0">
+          <div className="flex flex-col gap-1.5 basis-60 min-w-0">
             <span id="employee-service-label" className={fieldLabel}>
               Service
             </span>
@@ -222,7 +222,6 @@ const ManageEmployees = () => {
                 setPage(0);
               }}
               searchable
-              menuWidth="w-75"
             />
           </div>
         </div>
