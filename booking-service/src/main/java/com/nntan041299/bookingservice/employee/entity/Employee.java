@@ -4,7 +4,9 @@ import com.nntan041299.bookingservice.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -26,6 +28,9 @@ public class Employee extends BaseEntity {
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
     @Column(name = "avatar_url")
     private String avatarUrl;
 
@@ -38,4 +43,10 @@ public class Employee extends BaseEntity {
     @Column(name = "service_id")
     @Builder.Default
     private Set<Long> serviceIds = new HashSet<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "employee_id", nullable = false)
+    @OrderBy("dayOfWeek ASC, startTime ASC")
+    @Builder.Default
+    private List<EmployeeWorkingHours> workingHours = new ArrayList<>();
 }

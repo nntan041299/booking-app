@@ -30,6 +30,8 @@ public enum ErrorCode {
     INVALID_OAUTH_STATE("00014", "Invalid or expired OAuth state"),
     INVALID_REQUEST_FORMAT("00015", "Invalid request format"),
     SERVICE_NAME_ALREADY_EXISTS("00016", "Service name already exists"),
+    EMPLOYEE_NOT_FOUND("00017", "Employee not found"),
+    INVALID_WORKING_HOURS("00018", "Working hours are invalid: start must be before end and ranges on the same day must not overlap"),
     INTERNAL_ERROR("99999", "An unexpected error occurred");
 
     private final String code;
