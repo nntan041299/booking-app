@@ -3,17 +3,20 @@ package com.nntan041299.bookingservice.catalog.service;
 import com.nntan041299.bookingservice.catalog.dto.CreateServiceRequest;
 import com.nntan041299.bookingservice.catalog.dto.ServiceResponse;
 import com.nntan041299.bookingservice.catalog.dto.ServiceSearchCriteria;
+import com.nntan041299.bookingservice.catalog.dto.UpdateServiceRequest;
 import com.nntan041299.bookingservice.catalog.entity.ServiceOffering;
 import com.nntan041299.bookingservice.catalog.mapper.ServiceMapper;
 import com.nntan041299.bookingservice.catalog.repository.ServiceRepository;
 import com.nntan041299.bookingservice.catalog.repository.ServiceSpecifications;
 import com.nntan041299.bookingservice.common.dto.PageResponse;
 import com.nntan041299.bookingservice.common.exception.ErrorCode;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +41,38 @@ public class ServiceCatalogService {
                 .build();
 
         return serviceMapper.toResponse(serviceRepository.save(service));
+    }
+
+    @Transactional
+    public ServiceResponse update(Long id, UpdateServiceRequest request) {
+        ServiceOffering service = serviceRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.SERVICE_NOT_FOUND.name()));
+
+        String name = request.getName().trim();
+        if (serviceRepository.existsByNameIgnoreCaseAndIdNot(name, id)) {
+            throw new IllegalArgumentException(ErrorCode.SERVICE_NAME_ALREADY_EXISTS.name());
+        }
+
+        service.setName(name);
+        service.setDescription(request.getDescription());
+        service.setDurationMinutes(request.getDurationMinutes());
+        service.setPrice(request.getPrice());
+        if (request.getActive() != null) {
+            service.setActive(request.getActive());
+        }
+        return serviceMapper.toResponse(serviceRepository.save(service));
+    }
+
+    /**
+     * Removing a service deactivates it rather than deleting the row: appointments and employee
+     * assignments reference it, and customers stop seeing it. Idempotent.
+     */
+    @Transactional
+    public void remove(Long id) {
+        ServiceOffering service = serviceRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(ErrorCode.SERVICE_NOT_FOUND.name()));
+        service.setActive(false);
+        serviceRepository.save(service);
     }
 
     public PageResponse<ServiceResponse> search(ServiceSearchCriteria criteria, int page, int size) {
