@@ -37,11 +37,13 @@ const Layout = ({ children }: LayoutProps) => {
   }, [dispatch, id]);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <SideBar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <Header onMenuToggle={() => setSidebarOpen((prev) => !prev)} />
-        <main className="flex-1 overflow-y-auto bg-spa-canvas">{children}</main>
+    <div className="flex h-screen flex-col overflow-hidden">
+      <Header onMenuToggle={() => setSidebarOpen((prev) => !prev)} />
+      <div className="flex flex-1 min-h-0">
+        <SideBar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="flex-1 min-w-0 overflow-y-auto bg-spa-canvas">
+          {children}
+        </main>
       </div>
     </div>
   );

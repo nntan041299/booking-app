@@ -29,8 +29,8 @@ const MenuIcon = ({ children }: { children: ReactNode }) => (
 );
 
 const itemClass =
-  "w-full flex items-center gap-3 min-h-11 px-3 rounded-[10px] text-[15px] font-medium text-left no-underline " +
-  "transition-colors duration-150 cursor-pointer hover:bg-spa-canvas " +
+  "w-full flex items-center gap-3 min-h-11 px-3 rounded-lg text-[15px] font-medium text-left no-underline " +
+  "transition-colors duration-150 cursor-pointer hover:bg-spa-hover " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green";
 
 export default function Header({ onMenuToggle }: HeaderProps) {
@@ -56,23 +56,36 @@ export default function Header({ onMenuToggle }: HeaderProps) {
         : "?";
 
   const fullName = [firstName, lastName].filter(Boolean).join(" ") || "User";
+  const isAdmin = role === "ADMIN";
 
   return (
-    <header className="min-h-[72px] bg-white border-b border-spa-line flex items-center justify-between px-4 md:px-8 flex-shrink-0">
-      {/* Hamburger — mobile only */}
-      <button
-        type="button"
-        onClick={onMenuToggle}
-        className="md:hidden flex items-center justify-center w-11 h-11 rounded-[10px] text-spa-text
-                   hover:bg-spa-canvas transition-colors duration-150 cursor-pointer
-                   focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green"
-        aria-label="Open menu"
-      >
-        <i className="pi pi-bars text-base" />
-      </button>
+    <header className="min-h-[72px] bg-white border-b border-spa-line flex items-center justify-between gap-4 px-4 md:px-12 flex-shrink-0">
+      <div className="flex items-center gap-2">
+        {/* Hamburger — mobile only */}
+        <button
+          type="button"
+          onClick={onMenuToggle}
+          className="md:hidden flex items-center justify-center w-11 h-11 rounded-[10px] text-spa-text
+                     hover:bg-spa-canvas transition-colors duration-150 cursor-pointer
+                     focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green"
+          aria-label="Open menu"
+        >
+          <i className="pi pi-bars text-base" />
+        </button>
 
-      {/* Spacer so avatar stays right on desktop */}
-      <div className="hidden md:block flex-1" />
+        {/* Brand */}
+        <div>
+          <div
+            className="text-[22px] font-semibold leading-tight text-spa-ink"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Spa Admin
+          </div>
+          <div className="text-[13px] text-spa-muted mt-0.5">
+            Booking console
+          </div>
+        </div>
+      </div>
 
       <div
         className="relative"
@@ -82,15 +95,16 @@ export default function Header({ onMenuToggle }: HeaderProps) {
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
-          className="flex items-center justify-center min-h-11 p-0.5 rounded-full cursor-pointer
+          className="group flex items-center justify-center w-12 h-12 rounded-full cursor-pointer
                      focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green"
           aria-label={`Account menu for ${fullName}`}
           aria-haspopup="menu"
           aria-expanded={open}
         >
           <span
-            className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden
-                       bg-spa-sand text-spa-sand-ink text-sm font-semibold"
+            className={`flex items-center justify-center w-10 h-10 rounded-full overflow-hidden text-sm font-semibold
+                        ${isAdmin ? "bg-spa-green-50 text-spa-green-800" : "bg-spa-sand text-spa-sand-ink"}
+                        ${open ? "shadow-[0_0_0_3px_#CFE3DA]" : ""}`}
             style={{ fontFamily: "var(--font-sans)" }}
           >
             {avatarUrl ? (
@@ -108,11 +122,12 @@ export default function Header({ onMenuToggle }: HeaderProps) {
         {open && (
           <div
             role="menu"
-            className="absolute right-0 top-[calc(100%+8px)] z-50 w-[264px] box-border bg-white border border-spa-line
-                       rounded-[14px] shadow-[0_12px_32px_rgba(31,42,38,0.16)] p-2 flex flex-col gap-0.5 text-spa-ink"
+            aria-label="Account"
+            className="absolute right-0 top-[calc(100%+8px)] z-40 w-[264px] box-border bg-white border border-spa-line
+                       rounded-xl shadow-[0_12px_32px_rgba(31,42,38,0.16)] p-1.5 flex flex-col gap-0.5 text-spa-ink"
             style={{ fontFamily: "var(--font-sans)" }}
           >
-            <div className="px-3 pt-2.5 pb-3 mb-1 border-b border-spa-divider">
+            <div className="px-2.5 pt-2.5 pb-3 mb-1 border-b border-spa-divider">
               <p className="text-[15px] font-semibold truncate">{fullName}</p>
               {email && (
                 <p className="text-[13px] text-spa-muted mt-0.5 truncate">
@@ -134,7 +149,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
               Edit profile
             </Link>
 
-            {role !== "ADMIN" && (
+            {!isAdmin && (
               <Link
                 to="/"
                 role="menuitem"

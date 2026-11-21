@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import {
   keepPreviousData,
   useMutation,
@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-query";
 import Layout from "@/layouts/Layout";
 import Button from "@/components/Button";
-import Input from "@/components/Input";
+import Dropdown from "@/components/Dropdown";
 import Loading from "@/components/Loading";
 import Modal from "@/components/Modal";
 import Pagination from "@/components/Pagination";
@@ -20,8 +20,7 @@ import {
   type EmployeeItem,
 } from "@/service/employee";
 import { getErrorMessage } from "@/rest";
-import EmployeeFormModal from "./EmployeeFormModal";
-import { DAYS } from "./constants";
+import { DAYS, toTimeInput } from "./constants";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -31,13 +30,62 @@ const STATUS_TO_ACTIVE: Record<StatusFilter, boolean | undefined> = {
   inactive: false,
 };
 
+const STATUS_OPTIONS = [
+  { value: "all", label: "All statuses" },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+];
+
+const PAGE_SIZE_OPTIONS = [5, 10, 25, 50].map((n) => ({
+  value: String(n),
+  label: String(n),
+}));
+
+const SEARCH_DEBOUNCE_MS = 300;
+
+// Avatar colors from the design, cycled per row.
+const AVATAR_COLORS = [
+  { bg: "#E3EEE9", fg: "#1F4238" },
+  { bg: "#F3E3D6", fg: "#6B3A1E" },
+  { bg: "#E1E8F3", fg: "#27415F" },
+  { bg: "#F1E1E6", fg: "#6A2B3E" },
+  { bg: "#ECE8D3", fg: "#4F4719" },
+];
+
+const initialsOf = (fullName: string) => {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = parts[0][0];
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (first + last).toUpperCase();
+};
+
+/** "Mon to Fri" for a run of 3+ consecutive days, otherwise "Mon, Wed, Fri". */
 const workingDaysSummary = (employee: EmployeeItem) => {
   const days = new Set(employee.workingHours.map((h) => h.dayOfWeek));
   if (days.size === 0) return "Not set";
-  return DAYS.filter((d) => days.has(d.value))
-    .map((d) => d.label.slice(0, 3))
-    .join(", ");
+  const selected = DAYS.filter((d) => days.has(d.value));
+  const short = selected.map((d) => d.label.slice(0, 3));
+  const first = selected[0].value;
+  const last = selected[selected.length - 1].value;
+  const contiguous = last - first + 1 === selected.length;
+  return contiguous && selected.length >= 3
+    ? `${short[0]} to ${short[short.length - 1]}`
+    : short.join(", ");
 };
+
+const workingHoursSummary = (employee: EmployeeItem) => {
+  const { workingHours } = employee;
+  if (workingHours.length === 0) return null;
+  const ranges = new Set(
+    workingHours.map(
+      (h) => `${toTimeInput(h.startTime)} to ${toTimeInput(h.endTime)}`,
+    ),
+  );
+  return ranges.size === 1 ? [...ranges][0] : "Hours vary by day";
+};
+
+const fieldLabel = "text-[13px] font-medium text-spa-text";
 
 const ManageEmployees = () => {
   const queryClient = useQueryClient();
@@ -47,19 +95,20 @@ const ManageEmployees = () => {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(0);
-  // undefined = closed, null = creating, otherwise editing that employee
-  const [editing, setEditing] = useState<EmployeeItem | null | undefined>(
-    undefined,
-  );
+  const [size, setSize] = useState(10);
   const [removing, setRemoving] = useState<EmployeeItem | null>(null);
+  const searchTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(searchTimer.current), []);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["admin-employees", search, status, page],
+    queryKey: ["admin-employees", search, status, page, size],
     queryFn: () =>
       searchEmployees({
         keyword: search,
         active: STATUS_TO_ACTIVE[status],
         page,
+        size,
       }),
     placeholderData: keepPreviousData,
   });
@@ -84,10 +133,13 @@ const ManageEmployees = () => {
   // The user is fetched by Layout; wait for it before deciding access.
   if (id && role !== "ADMIN") return <Navigate to="/" replace />;
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(0);
-    setSearch(keyword.trim());
+  const handleKeyword = (value: string) => {
+    setKeyword(value);
+    window.clearTimeout(searchTimer.current);
+    searchTimer.current = window.setTimeout(() => {
+      setPage(0);
+      setSearch(value.trim());
+    }, SEARCH_DEBOUNCE_MS);
   };
 
   const closeRemove = () => {
@@ -99,152 +151,220 @@ const ManageEmployees = () => {
   return (
     <Layout>
       <Loading isLoading={isLoading || isRemoving} />
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 space-y-6">
-        <div className="flex items-start justify-between gap-4">
+      <div
+        className="px-4 md:px-12 py-8 md:py-10 flex flex-col gap-7 text-spa-ink"
+        style={{ fontFamily: "var(--font-sans)" }}
+      >
+        <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1
-              className="text-2xl font-bold text-surface-900"
-              style={{ fontFamily: "var(--font-display)" }}
+              className="m-0 text-4xl font-semibold"
+              style={{ fontFamily: "var(--font-heading)" }}
             >
-              Manage employees
+              Employees
             </h1>
-            <p className="text-sm text-surface-500 mt-1">
-              Search, add, edit and remove employees, their services and working
-              hours.
+            <p className="mt-1.5 text-[15px] text-spa-muted">
+              Manage your team, the services they perform and when they work.
             </p>
           </div>
-          <Button onClick={() => setEditing(null)} className="flex-shrink-0">
-            <i className="pi pi-plus text-xs mr-2" />
+          <Link
+            to="/admin/employees/new"
+            className="inline-flex items-center gap-2 min-h-11 px-5 rounded-[10px] bg-spa-green text-white text-[15px] font-semibold no-underline
+                       hover:bg-spa-green-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green"
+          >
+            <svg
+              aria-hidden="true"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
             Add employee
-          </Button>
-        </div>
+          </Link>
+        </header>
 
-        <form onSubmit={handleSearch} className="flex flex-wrap gap-2">
-          <div className="flex-1 min-w-48">
-            <Input
-              name="keyword"
+        <div className="flex flex-wrap gap-3">
+          <div className="flex-1 basis-70 flex flex-col gap-1.5">
+            <label htmlFor="employee-search" className={fieldLabel}>
+              Search
+            </label>
+            <input
+              id="employee-search"
+              type="search"
               value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+              onChange={(e) => handleKeyword(e.target.value)}
               placeholder="Search by name"
+              className="h-11 box-border px-3.5 rounded-[10px] border border-spa-border-strong bg-white text-[15px] placeholder:text-spa-muted
+                         focus:outline-2 focus:outline-offset-2 focus:outline-spa-green"
             />
           </div>
-          <select
-            aria-label="Status filter"
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value as StatusFilter);
-              setPage(0);
-            }}
-            className="px-3 py-2.5 rounded-xl border border-surface-200 bg-white text-sm text-surface-700"
-          >
-            <option value="all">All statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-          <Button type="submit">Search</Button>
-        </form>
+          <div className="flex flex-col gap-1.5 basis-55 min-w-0">
+            <span id="employee-status-label" className={fieldLabel}>
+              Status
+            </span>
+            <Dropdown
+              id="employee-status"
+              labelId="employee-status-label"
+              value={status}
+              options={STATUS_OPTIONS}
+              onChange={(v) => {
+                setStatus(v as StatusFilter);
+                setPage(0);
+              }}
+              menuWidth="w-full min-w-50"
+            />
+          </div>
+        </div>
 
         {isLoading ? null : isError ? (
-          <p className="text-sm text-red-600">Could not load employees.</p>
+          <p className="text-sm text-spa-danger">Could not load employees.</p>
         ) : !data?.content.length ? (
-          <p className="text-sm text-surface-500">No employees found.</p>
+          <p className="text-sm text-spa-muted">No employees found.</p>
         ) : (
           <>
-            <div className="bg-white rounded-2xl border border-surface-200 overflow-x-auto">
-              <table
-                className="w-full text-sm text-left"
-                style={{ fontFamily: "var(--font-sans)" }}
-              >
-                <thead className="text-xs uppercase tracking-widest text-surface-500 border-b border-surface-100">
+            <div className="bg-white rounded-[14px] border border-spa-line overflow-x-auto">
+              <table className="w-full min-w-180 border-collapse text-sm text-left">
+                <thead className="text-[13px] text-spa-muted">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Name</th>
-                    <th className="px-4 py-3 font-semibold">Services</th>
-                    <th className="px-4 py-3 font-semibold">Working days</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold text-right">
+                    <th
+                      scope="col"
+                      className="px-5 py-3.5 font-medium border-b border-spa-line"
+                    >
+                      Employee
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3.5 font-medium border-b border-spa-line"
+                    >
+                      Working hours
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-3.5 font-medium border-b border-spa-line text-right"
+                    >
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.content.map((employee) => (
-                    <tr
-                      key={employee.id}
-                      className="border-b border-surface-100 last:border-0"
-                    >
-                      <td className="px-4 py-3 max-w-xs">
-                        <p className="font-medium text-surface-900">
-                          {employee.fullName}
-                        </p>
-                        {employee.bio && (
-                          <p className="text-xs text-surface-500 truncate">
-                            {employee.bio}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-surface-700">
-                        {employee.serviceIds.length}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-surface-700">
-                        {workingDaysSummary(employee)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                            employee.active
-                              ? "bg-sage-100 text-sage-600"
-                              : "bg-surface-100 text-surface-500"
-                          }`}
-                        >
-                          {employee.active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-1">
-                          <button
-                            type="button"
+                  {data.content.map((employee, index) => {
+                    const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
+                    const hours = workingHoursSummary(employee);
+                    return (
+                      <tr key={employee.id}>
+                        <td className="px-5 py-4 border-b border-spa-divider">
+                          <div className="flex items-center gap-3.5">
+                            <div
+                              aria-hidden="true"
+                              className="w-11 h-11 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-[15px] font-semibold"
+                              style={{ background: color.bg, color: color.fg }}
+                            >
+                              {employee.avatarUrl ? (
+                                <img
+                                  src={employee.avatarUrl}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                initialsOf(employee.fullName)
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-[15px]">
+                                  {employee.fullName}
+                                </span>
+                                {!employee.active && (
+                                  <span className="px-2 py-0.5 rounded-full bg-spa-divider text-spa-text text-xs font-semibold">
+                                    Inactive
+                                  </span>
+                                )}
+                              </div>
+                              {employee.bio && (
+                                <div className="mt-0.5 max-w-70 text-spa-muted truncate">
+                                  {employee.bio}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-4 border-b border-spa-divider text-spa-text">
+                          <div className="font-medium">
+                            {workingDaysSummary(employee)}
+                          </div>
+                          {hours && (
+                            <div className="mt-0.5 text-spa-muted">{hours}</div>
+                          )}
+                        </td>
+                        <td className="px-5 py-4 border-b border-spa-divider text-right whitespace-nowrap">
+                          <Link
+                            to={`/admin/employees/${employee.id}`}
+                            state={{ employee }}
                             aria-label={`Edit ${employee.fullName}`}
-                            onClick={() => setEditing(employee)}
-                            className="p-2 rounded-lg text-surface-500 hover:bg-surface-100 cursor-pointer"
+                            className="inline-flex items-center min-h-11 px-3.5 mr-2 rounded-[10px] border border-spa-border-strong bg-white text-spa-ink font-medium no-underline hover:bg-spa-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green"
                           >
-                            <i className="pi pi-pencil text-sm" />
-                          </button>
+                            Edit
+                          </Link>
                           <button
                             type="button"
                             aria-label={`Remove ${employee.fullName}`}
                             disabled={!employee.active}
                             onClick={() => setRemoving(employee)}
-                            className="p-2 rounded-lg text-red-500 hover:bg-red-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            className="min-h-11 px-3.5 rounded-[10px] border border-spa-danger-line bg-white text-spa-danger font-medium cursor-pointer hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
                           >
-                            <i className="pi pi-trash text-sm" />
+                            Remove
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
-            <Pagination
-              page={data.number}
-              totalPages={data.totalPages}
-              onPageChange={setPage}
-            />
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                <p className="m-0 text-sm text-spa-muted">
+                  Showing {data.number * size + 1} to{" "}
+                  {data.number * size + data.content.length} of{" "}
+                  {data.totalElements} employees
+                </p>
+                <div className="flex items-center gap-2">
+                  <span
+                    id="employee-page-size-label"
+                    className="text-sm text-spa-muted"
+                  >
+                    Rows per page
+                  </span>
+                  <Dropdown
+                    id="employee-page-size"
+                    labelId="employee-page-size-label"
+                    value={String(size)}
+                    options={PAGE_SIZE_OPTIONS}
+                    onChange={(v) => {
+                      setSize(Number(v));
+                      setPage(0);
+                    }}
+                    openUp
+                    className="min-w-21 !px-3 text-sm"
+                    menuWidth="w-35"
+                  />
+                </div>
+              </div>
+              <Pagination
+                page={data.number}
+                totalPages={data.totalPages}
+                onPageChange={setPage}
+              />
+            </div>
           </>
         )}
       </div>
-
-      {editing !== undefined && (
-        <EmployeeFormModal
-          employee={editing}
-          onClose={() => setEditing(undefined)}
-          onSaved={() => {
-            setEditing(undefined);
-            refresh();
-          }}
-        />
-      )}
 
       {removing && (
         <Modal title="Remove employee" onClose={closeRemove}>

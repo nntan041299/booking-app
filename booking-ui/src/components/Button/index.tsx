@@ -5,9 +5,9 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASS: Record<Variant, string> = {
-  primary: "bg-ink-900 text-parchment hover:bg-ink-800",
+  primary: "bg-spa-green text-white hover:bg-spa-green-800",
   secondary:
-    "border border-surface-200 text-surface-700 bg-white hover:bg-surface-50",
+    "border border-spa-border-strong text-spa-ink bg-white hover:bg-spa-canvas",
 };
 
 export default function Button({
@@ -21,8 +21,9 @@ export default function Button({
       {...props}
       type={type}
       className={`
-        px-5 py-2.5 rounded-xl text-sm font-semibold
+        inline-flex items-center justify-center min-h-11 px-5 rounded-[10px] text-[15px] font-semibold
         transition-colors duration-150 cursor-pointer
+        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green
         disabled:opacity-40 disabled:cursor-not-allowed
         ${VARIANT_CLASS[variant]} ${className}
       `}

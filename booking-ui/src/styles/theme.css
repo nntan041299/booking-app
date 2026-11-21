@@ -42,9 +42,14 @@
   --color-spa-green: #2f5d50;
   --color-spa-green-50: #e3eee9;
   --color-spa-divider: #efeae0;
+  --color-spa-hover: #f1ede4;
+  --color-spa-dashed: #9db5ab;
   --color-spa-sand: #f3e3d6;
   --color-spa-sand-ink: #6b3a1e;
   --color-spa-danger: #a3372b;
+  --color-spa-danger-line: #e7c9c3;
+  --color-spa-border-strong: #cfc8bb;
+  --color-spa-green-800: #1f4238;
 
   /* ── Semantic aliases ── */
   --color-text-primary: var(--color-surface-900);

@@ -80,31 +80,17 @@ export default function SideBar({ open, onClose }: SideBarProps) {
       aria-label="Admin"
       className="w-[260px] h-full flex flex-col flex-shrink-0 gap-7 bg-white border-r border-spa-line px-4 py-7 select-none"
     >
-      {/* Brand */}
-      <div className="flex items-start justify-between px-3">
-        <div>
-          <div
-            className="text-[22px] font-semibold leading-tight text-spa-ink"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Spa Admin
-          </div>
-          <div className="text-[13px] text-spa-muted mt-0.5">
-            Booking console
-          </div>
-        </div>
-        {/* Close button — mobile only */}
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="md:hidden text-spa-muted hover:text-spa-ink transition-colors p-1 cursor-pointer"
-            aria-label="Close menu"
-          >
-            <i className="pi pi-times text-base" />
-          </button>
-        )}
-      </div>
+      {/* Close button — mobile drawer only */}
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="md:hidden self-end -mb-3 flex items-center justify-center w-11 h-11 rounded-[10px] text-spa-muted hover:text-spa-ink hover:bg-spa-canvas transition-colors cursor-pointer"
+          aria-label="Close menu"
+        >
+          <i className="pi pi-times text-base" />
+        </button>
+      )}
 
       {/* Navigation */}
       <nav

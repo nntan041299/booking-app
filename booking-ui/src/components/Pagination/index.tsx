@@ -5,9 +5,11 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
-const pageButton =
-  "min-w-9 h-9 px-2 rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed";
-const arrowButton = `${pageButton} text-surface-600 hover:bg-surface-100 disabled:opacity-40 disabled:hover:bg-transparent`;
+const base =
+  "inline-flex items-center justify-center gap-1 min-w-11 min-h-11 px-3.5 box-border rounded-[10px] text-sm font-medium " +
+  "transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green " +
+  "disabled:cursor-not-allowed";
+const edgeButton = `${base} border border-spa-border-strong bg-white text-spa-ink hover:bg-spa-canvas disabled:border-spa-line disabled:bg-spa-canvas disabled:text-spa-muted disabled:hover:bg-spa-canvas`;
 
 // Zero-based page indexes with "..." gaps, e.g. 0 ... 4 5 6 ... 19
 const getPageItems = (current: number, total: number) => {
@@ -29,32 +31,39 @@ const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) => {
   return (
     <nav
       aria-label="Pagination"
-      className="flex items-center justify-center gap-1"
+      className="flex flex-wrap items-center gap-1.5"
+      style={{ fontFamily: "var(--font-sans)" }}
     >
       <button
         type="button"
         aria-label="Previous page"
         disabled={page === 0}
         onClick={() => onPageChange(page - 1)}
-        className={arrowButton}
+        className={edgeButton}
       >
         <i className="pi pi-chevron-left text-xs" />
+        Prev
       </button>
       {getPageItems(page, totalPages).map((item, i) =>
         item === "..." ? (
-          <span key={`gap-${i}`} className="px-1 text-surface-400">
+          <span key={`gap-${i}`} className="px-1.5 text-spa-muted">
             …
           </span>
         ) : (
           <button
             key={item}
             type="button"
+            aria-label={
+              item === page
+                ? `Page ${item + 1}, current page`
+                : `Page ${item + 1}`
+            }
             aria-current={item === page ? "page" : undefined}
             onClick={() => onPageChange(item)}
-            className={`${pageButton} ${
+            className={`${base} ${
               item === page
-                ? "bg-surface-900 text-white"
-                : "text-surface-600 hover:bg-surface-100"
+                ? "bg-spa-green text-white font-semibold"
+                : "border border-spa-border-strong bg-white text-spa-ink hover:bg-spa-canvas"
             }`}
           >
             {item + 1}
@@ -66,8 +75,9 @@ const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) => {
         aria-label="Next page"
         disabled={page + 1 >= totalPages}
         onClick={() => onPageChange(page + 1)}
-        className={arrowButton}
+        className={edgeButton}
       >
+        Next
         <i className="pi pi-chevron-right text-xs" />
       </button>
     </nav>
