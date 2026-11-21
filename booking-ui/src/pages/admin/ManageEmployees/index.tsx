@@ -8,22 +8,35 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import Layout from "@/layouts/Layout";
-import Button from "@/components/Button";
 import Dropdown from "@/components/Dropdown";
 import Loading from "@/components/Loading";
-import Modal from "@/components/Modal";
 import Pagination from "@/components/Pagination";
+import StatusChip from "@/components/StatusChip";
 import { selectUser } from "@/redux/user/selectors";
 import { searchAdminServices } from "@/service/catalog";
 import {
-  removeEmployee,
   searchEmployees,
+  updateEmployee,
   type EmployeeItem,
 } from "@/service/employee";
 import { getErrorMessage } from "@/rest";
 import { DAYS, toTimeInput } from "./constants";
 
 const ALL_SERVICES = "all";
+
+type StatusFilter = "all" | "active" | "inactive";
+
+const STATUS_TO_ACTIVE: Record<StatusFilter, boolean | undefined> = {
+  all: undefined,
+  active: true,
+  inactive: false,
+};
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+];
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50].map((n) => ({
   value: String(n),
@@ -83,9 +96,9 @@ const ManageEmployees = () => {
   const [keyword, setKeyword] = useState("");
   const [search, setSearch] = useState("");
   const [service, setService] = useState(ALL_SERVICES);
+  const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
-  const [removing, setRemoving] = useState<EmployeeItem | null>(null);
   const searchTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(searchTimer.current), []);
@@ -107,11 +120,12 @@ const ManageEmployees = () => {
   ];
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["admin-employees", search, service, page, size],
+    queryKey: ["admin-employees", search, service, status, page, size],
     queryFn: () =>
       searchEmployees({
         keyword: search,
         serviceId: service === ALL_SERVICES ? undefined : Number(service),
+        active: STATUS_TO_ACTIVE[status],
         page,
         size,
       }),
@@ -121,18 +135,18 @@ const ManageEmployees = () => {
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: ["admin-employees"] });
 
+  // Activate or deactivate straight from the list. Deactivating hides the
+  // employee from new bookings and disables their login; nothing is deleted.
   const {
-    mutate: remove,
-    isPending: isRemoving,
-    isError: isRemoveError,
-    error: removeError,
-    reset: resetRemove,
+    mutate: toggleActive,
+    isPending: isToggling,
+    variables: toggling,
+    isError: isToggleError,
+    error: toggleError,
   } = useMutation({
-    mutationFn: (employee: EmployeeItem) => removeEmployee(employee.id),
-    onSuccess: () => {
-      setRemoving(null);
-      refresh();
-    },
+    mutationFn: (employee: EmployeeItem) =>
+      updateEmployee(employee.id, { active: !employee.active }),
+    onSuccess: refresh,
   });
 
   // The user is fetched by Layout; wait for it before deciding access.
@@ -147,15 +161,9 @@ const ManageEmployees = () => {
     }, SEARCH_DEBOUNCE_MS);
   };
 
-  const closeRemove = () => {
-    if (isRemoving) return;
-    setRemoving(null);
-    resetRemove();
-  };
-
   return (
     <Layout>
-      <Loading isLoading={isLoading || isRemoving} />
+      <Loading isLoading={isLoading} />
       <div
         className="px-4 md:px-12 py-8 md:py-10 flex flex-col gap-7 text-spa-ink"
         style={{ fontFamily: "var(--font-sans)" }}
@@ -224,7 +232,28 @@ const ManageEmployees = () => {
               searchable
             />
           </div>
+          <div className="flex flex-col gap-1.5 basis-50 min-w-0">
+            <span id="employee-status-label" className={fieldLabel}>
+              Status
+            </span>
+            <Dropdown
+              id="employee-status"
+              labelId="employee-status-label"
+              value={status}
+              options={STATUS_OPTIONS}
+              onChange={(v) => {
+                setStatus(v as StatusFilter);
+                setPage(0);
+              }}
+            />
+          </div>
         </div>
+
+        {isToggleError && (
+          <p role="alert" className="m-0 text-sm text-spa-danger">
+            {getErrorMessage(toggleError)}
+          </p>
+        )}
 
         {isLoading ? null : isError ? (
           <p className="text-sm text-spa-danger">Could not load employees.</p>
@@ -233,7 +262,7 @@ const ManageEmployees = () => {
         ) : (
           <>
             <div className="bg-white rounded-[14px] border border-spa-line overflow-x-auto">
-              <table className="w-full min-w-180 border-collapse text-sm text-left">
+              <table className="w-full min-w-205 border-collapse text-sm text-left">
                 <thead className="text-[13px] text-spa-muted">
                   <tr>
                     <th
@@ -250,6 +279,12 @@ const ManageEmployees = () => {
                     </th>
                     <th
                       scope="col"
+                      className="px-3 py-3.5 font-medium border-b border-spa-line"
+                    >
+                      Status
+                    </th>
+                    <th
+                      scope="col"
                       className="px-5 py-3.5 font-medium border-b border-spa-line text-right"
                     >
                       Actions
@@ -262,7 +297,9 @@ const ManageEmployees = () => {
                     const hours = workingHoursSummary(employee);
                     return (
                       <tr key={employee.id}>
-                        <td className="px-5 py-4 border-b border-spa-divider">
+                        <td
+                          className={`px-5 py-4 border-b border-spa-divider ${employee.active ? "" : "opacity-55"}`}
+                        >
                           <div className="flex items-center gap-3.5">
                             <div
                               aria-hidden="true"
@@ -284,11 +321,6 @@ const ManageEmployees = () => {
                                 <span className="font-semibold text-[15px]">
                                   {employee.fullName}
                                 </span>
-                                {!employee.active && (
-                                  <span className="px-2 py-0.5 rounded-full bg-spa-divider text-spa-text text-xs font-semibold">
-                                    Inactive
-                                  </span>
-                                )}
                               </div>
                               {employee.bio && (
                                 <div className="mt-0.5 max-w-70 text-spa-muted truncate">
@@ -298,13 +330,18 @@ const ManageEmployees = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 py-4 border-b border-spa-divider text-spa-text">
+                        <td
+                          className={`px-3 py-4 border-b border-spa-divider text-spa-text ${employee.active ? "" : "opacity-55"}`}
+                        >
                           <div className="font-medium">
                             {workingDaysSummary(employee)}
                           </div>
                           {hours && (
                             <div className="mt-0.5 text-spa-muted">{hours}</div>
                           )}
+                        </td>
+                        <td className="px-3 py-4 border-b border-spa-divider whitespace-nowrap">
+                          <StatusChip active={employee.active} />
                         </td>
                         <td className="px-5 py-4 border-b border-spa-divider text-right whitespace-nowrap">
                           <Link
@@ -317,12 +354,21 @@ const ManageEmployees = () => {
                           </Link>
                           <button
                             type="button"
-                            aria-label={`Remove ${employee.fullName}`}
-                            disabled={!employee.active}
-                            onClick={() => setRemoving(employee)}
-                            className="min-h-11 px-3.5 rounded-[10px] border border-spa-danger-line bg-white text-spa-danger font-medium cursor-pointer hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+                            aria-label={`${employee.active ? "Deactivate" : "Activate"} ${employee.fullName}`}
+                            disabled={
+                              isToggling && toggling?.id === employee.id
+                            }
+                            onClick={() => toggleActive(employee)}
+                            className={`min-h-11 px-3.5 rounded-[10px] border font-medium cursor-pointer
+                                        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green
+                                        disabled:opacity-50 disabled:cursor-not-allowed
+                                        ${
+                                          employee.active
+                                            ? "border-spa-border-strong bg-white text-spa-ink hover:bg-spa-canvas"
+                                            : "border-spa-green bg-spa-green text-white hover:bg-spa-green-800"
+                                        }`}
                           >
-                            Remove
+                            {employee.active ? "Deactivate" : "Activate"}
                           </button>
                         </td>
                       </tr>
@@ -370,39 +416,6 @@ const ManageEmployees = () => {
           </>
         )}
       </div>
-
-      {removing && (
-        <Modal title="Remove employee" onClose={closeRemove}>
-          <div className="space-y-4">
-            <p
-              className="text-sm text-surface-700"
-              style={{ fontFamily: "var(--font-sans)" }}
-            >
-              Remove <strong>{removing.fullName}</strong>? They will no longer
-              be bookable and their account will be disabled. Existing
-              appointments are kept, and you can restore them later by editing
-              them and marking them active.
-            </p>
-            {isRemoveError && (
-              <p className="text-sm text-red-500">
-                {getErrorMessage(removeError)}
-              </p>
-            )}
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary"
-                onClick={closeRemove}
-                disabled={isRemoving}
-              >
-                Cancel
-              </Button>
-              <Button onClick={() => remove(removing)} disabled={isRemoving}>
-                {isRemoving ? "Removing…" : "Remove"}
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </Layout>
   );
 };

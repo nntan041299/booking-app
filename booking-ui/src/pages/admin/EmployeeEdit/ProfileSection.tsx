@@ -12,10 +12,7 @@ import {
 import { getErrorMessage } from "@/rest";
 import { Section, SectionFooter } from "@/components/Section";
 
-export type ProfilePatch = Pick<
-  EmployeeItem,
-  "fullName" | "bio" | "avatarUrl" | "active"
->;
+export type ProfilePatch = Pick<EmployeeItem, "fullName" | "bio" | "avatarUrl">;
 
 interface ProfileSectionProps {
   /** The employee being edited, or null to create a new one. */
@@ -36,13 +33,11 @@ export default function ProfileSection({
     fullName: employee?.fullName ?? "",
     avatarUrl: employee?.avatarUrl ?? "",
     bio: employee?.bio ?? "",
-    active: employee?.active ?? true,
   };
 
   const [fullName, setFullName] = useState(saved.fullName);
   const [avatarUrl, setAvatarUrl] = useState(saved.avatarUrl);
   const [bio, setBio] = useState(saved.bio);
-  const [active, setActive] = useState(saved.active);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,7 +56,6 @@ export default function ProfileSection({
           fullName: fullName.trim(),
           bio: bio.trim(),
           avatarUrl: avatarUrl.trim(),
-          active,
         });
         return undefined;
       }
@@ -84,7 +78,6 @@ export default function ProfileSection({
           fullName: fullName.trim(),
           bio: bio.trim(),
           avatarUrl: avatarUrl.trim(),
-          active,
         });
       } else {
         onCreated(created);
@@ -95,8 +88,7 @@ export default function ProfileSection({
   const dirty = isEdit
     ? fullName !== saved.fullName ||
       avatarUrl !== saved.avatarUrl ||
-      bio !== saved.bio ||
-      active !== saved.active
+      bio !== saved.bio
     : Boolean(fullName || avatarUrl || bio || username || email || password);
 
   const touch = () => {
@@ -108,7 +100,6 @@ export default function ProfileSection({
     setFullName(saved.fullName);
     setAvatarUrl(saved.avatarUrl);
     setBio(saved.bio);
-    setActive(saved.active);
     setUsername("");
     setEmail("");
     setPassword("");
@@ -265,22 +256,6 @@ export default function ProfileSection({
               className="resize-y"
             />
           </Field>
-
-          {isEdit && (
-            <label className="flex items-center gap-3 min-h-11 text-[15px] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={active}
-                disabled={isPending}
-                onChange={(e) => {
-                  setActive(e.target.checked);
-                  touch();
-                }}
-                className="w-[22px] h-[22px] accent-spa-green m-0"
-              />
-              Active (can sign in and be booked)
-            </label>
-          )}
         </div>
       </div>
 

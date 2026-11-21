@@ -13,7 +13,7 @@ import { getErrorMessage } from "@/rest";
 
 export type DetailsPatch = Pick<
   ServiceItem,
-  "name" | "description" | "durationMinutes" | "price" | "active"
+  "name" | "description" | "durationMinutes" | "price"
 >;
 
 interface DetailsSectionProps {
@@ -34,14 +34,12 @@ export default function DetailsSection({
     description: service?.description ?? "",
     duration: service ? String(service.durationMinutes) : "",
     price: service ? String(service.price) : "",
-    active: service?.active ?? true,
   };
 
   const [name, setName] = useState(saved.name);
   const [description, setDescription] = useState(saved.description);
   const [duration, setDuration] = useState(saved.duration);
   const [price, setPrice] = useState(saved.price);
-  const [active, setActive] = useState(saved.active);
   const [formError, setFormError] = useState("");
 
   const payload = () => ({
@@ -60,7 +58,11 @@ export default function DetailsSection({
   } = useMutation({
     mutationFn: async () => {
       if (isEdit) {
-        await updateService(service.id, { ...payload(), active });
+        // A full update: keep whatever active state the service has now.
+        await updateService(service.id, {
+          ...payload(),
+          active: service.active,
+        });
         return undefined;
       }
       const res = await createService(payload());
@@ -76,7 +78,6 @@ export default function DetailsSection({
           description: p.description,
           durationMinutes: p.durationMinutes,
           price: p.price,
-          active,
         });
       } else {
         onCreated(created);
@@ -88,8 +89,7 @@ export default function DetailsSection({
     ? name !== saved.name ||
       description !== saved.description ||
       duration !== saved.duration ||
-      price !== saved.price ||
-      active !== saved.active
+      price !== saved.price
     : Boolean(name || description || duration || price);
 
   const touch = () => {
@@ -102,7 +102,6 @@ export default function DetailsSection({
     setDescription(saved.description);
     setDuration(saved.duration);
     setPrice(saved.price);
-    setActive(saved.active);
     touch();
   };
 
@@ -200,22 +199,6 @@ export default function DetailsSection({
           </Field>
         </div>
       </div>
-
-      {isEdit && (
-        <label className="flex items-center gap-3 min-h-11 text-[15px] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={active}
-            disabled={isPending}
-            onChange={(e) => {
-              setActive(e.target.checked);
-              touch();
-            }}
-            className="w-[22px] h-[22px] accent-spa-green m-0"
-          />
-          Active (visible to customers)
-        </label>
-      )}
 
       <SectionFooter
         dirty={dirty}
