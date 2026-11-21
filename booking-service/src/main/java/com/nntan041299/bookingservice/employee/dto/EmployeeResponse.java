@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @AllArgsConstructor
@@ -16,4 +17,5 @@ public class EmployeeResponse {
     private String avatarUrl;
     private boolean active;
     private List<WorkingHoursResponse> workingHours;
+    private Set<Long> serviceIds;
 }

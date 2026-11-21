@@ -1,6 +1,7 @@
 package com.nntan041299.bookingservice.employee.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -8,11 +9,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Partial update: a {@code null} field is left unchanged.
  * {@code workingHours}, when present, replaces the employee's whole weekly schedule
- * (an empty list clears it).
+ * (an empty list clears it). {@code serviceIds}, when present, replaces the set of assigned services.
  */
 @Getter
 @NoArgsConstructor
@@ -32,4 +34,6 @@ public class UpdateEmployeeRequest {
 
     @Valid
     private List<WorkingHoursRequest> workingHours;
+
+    private Set<@NotNull(message = "Service id must not be null") Long> serviceIds;
 }

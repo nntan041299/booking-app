@@ -32,6 +32,7 @@ public enum ErrorCode {
     SERVICE_NAME_ALREADY_EXISTS("00016", "Service name already exists"),
     EMPLOYEE_NOT_FOUND("00017", "Employee not found"),
     INVALID_WORKING_HOURS("00018", "Working hours are invalid: start must be before end and ranges on the same day must not overlap"),
+    SERVICE_NOT_FOUND("00019", "One or more services do not exist"),
     INTERNAL_ERROR("99999", "An unexpected error occurred");
 
     private final String code;

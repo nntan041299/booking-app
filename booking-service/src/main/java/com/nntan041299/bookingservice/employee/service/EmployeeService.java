@@ -3,6 +3,7 @@ package com.nntan041299.bookingservice.employee.service;
 import com.nntan041299.bookingservice.auth.entity.Role;
 import com.nntan041299.bookingservice.auth.entity.User;
 import com.nntan041299.bookingservice.auth.repository.UserRepository;
+import com.nntan041299.bookingservice.catalog.repository.ServiceRepository;
 import com.nntan041299.bookingservice.common.exception.ErrorCode;
 import com.nntan041299.bookingservice.employee.dto.CreateEmployeeRequest;
 import com.nntan041299.bookingservice.employee.dto.EmployeeResponse;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +31,7 @@ public class EmployeeService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmployeeMapper employeeMapper;
+    private final ServiceRepository serviceRepository;
 
     @Transactional
     public EmployeeResponse create(CreateEmployeeRequest request) {
@@ -78,6 +81,10 @@ public class EmployeeService {
             replaceWorkingHours(employee, request.getWorkingHours());
         }
 
+        if (request.getServiceIds() != null) {
+            replaceServices(employee, request.getServiceIds());
+        }
+
         syncLinkedUser(employee, request);
 
         return employeeMapper.toResponse(employeeRepository.save(employee));
@@ -97,6 +104,14 @@ public class EmployeeService {
             }
             userRepository.save(user);
         });
+    }
+
+    private void replaceServices(Employee employee, Set<Long> serviceIds) {
+        if (serviceRepository.findAllById(serviceIds).size() != serviceIds.size()) {
+            throw new IllegalArgumentException(ErrorCode.SERVICE_NOT_FOUND.name());
+        }
+        employee.getServiceIds().clear();
+        employee.getServiceIds().addAll(serviceIds);
     }
 
     private void replaceWorkingHours(Employee employee, List<WorkingHoursRequest> requested) {
