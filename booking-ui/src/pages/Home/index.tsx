@@ -25,9 +25,9 @@ const Home = () => {
         {email && <p className="text-sm text-surface-500">{email}</p>}
         {role === "ADMIN" && (
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Button onClick={() => navigate("/admin/services/new")}>
-              <i className="pi pi-plus text-xs mr-2" />
-              Create service
+            <Button onClick={() => navigate("/admin/services")}>
+              <i className="pi pi-list text-xs mr-2" />
+              Manage services
             </Button>
             <Button onClick={() => navigate("/admin/employees/new")}>
               <i className="pi pi-plus text-xs mr-2" />

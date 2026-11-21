@@ -1,12 +1,24 @@
+import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
+import { selectUser } from "@/redux/user/selectors";
 
 interface NavItem {
   path: string;
   label: string;
   icon: string;
+  /** Only show the item to users with this role; shown to everyone when omitted. */
+  role?: string;
 }
 
-const NAV_ITEMS: NavItem[] = [{ path: "/", label: "Home", icon: "pi-th-large" }];
+const NAV_ITEMS: NavItem[] = [
+  { path: "/", label: "Home", icon: "pi-th-large" },
+  {
+    path: "/admin/services",
+    label: "Services",
+    icon: "pi-list",
+    role: "ADMIN",
+  },
+];
 
 interface SideBarProps {
   open?: boolean;
@@ -16,6 +28,8 @@ interface SideBarProps {
 export default function SideBar({ open, onClose }: SideBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { role } = useSelector(selectUser);
+  const navItems = NAV_ITEMS.filter((item) => !item.role || item.role === role);
 
   const handleNav = (path: string) => {
     navigate(path);
@@ -46,7 +60,7 @@ export default function SideBar({ open, onClose }: SideBarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {NAV_ITEMS.map(({ path, label, icon }) => {
+        {navItems.map(({ path, label, icon }) => {
           const active = location.pathname === path;
           return (
             <button

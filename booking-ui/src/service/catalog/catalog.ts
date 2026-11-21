@@ -50,3 +50,43 @@ export const searchServices = async ({
   const res = await request.get({ path: `${ENDPOINT.SERVICES}?${query}` });
   return res.data.data;
 };
+
+export interface UpdateServicePayload extends CreateServicePayload {
+  active?: boolean;
+}
+
+export const updateService = async (
+  id: number,
+  payload: UpdateServicePayload,
+) => {
+  return request.put({
+    path: `${ENDPOINT.ADMIN_SERVICES}/${id}`,
+    body: payload as unknown as Record<string, unknown>,
+  });
+};
+
+/** Soft delete: the backend deactivates the service. */
+export const removeService = async (id: number) => {
+  return request.delete({ path: `${ENDPOINT.ADMIN_SERVICES}/${id}` });
+};
+
+export interface SearchAdminServicesParams extends SearchServicesParams {
+  /** Omit to include both active and inactive services. */
+  active?: boolean;
+}
+
+export const searchAdminServices = async ({
+  keyword,
+  active,
+  page = 0,
+  size = 10,
+}: SearchAdminServicesParams = {}): Promise<ServicePage> => {
+  const query = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  });
+  if (active !== undefined) query.set("active", String(active));
+  if (keyword) query.set("keyword", keyword);
+  const res = await request.get({ path: `${ENDPOINT.SERVICES}?${query}` });
+  return res.data.data;
+};

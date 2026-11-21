@@ -20,6 +20,14 @@ export const ERROR_MESSAGES: Record<string, string> = {
   "00014": "Sign-in session expired, please try again",
   "00015": "Invalid request format",
   "00016": "Service name already exists",
+  "00017": "Employee not found",
+  "00018": "Working hours are invalid",
+  "00019": "Service not found",
+  "00020": "This service is not available for booking",
+  "00021": "This employee is not available for the service",
+  "00022": "Appointment must start in the future",
+  "00023": "Appointment is outside the employee's working hours",
+  "00024": "That time slot is already booked",
 };
 
 interface ApiErrorBody {
