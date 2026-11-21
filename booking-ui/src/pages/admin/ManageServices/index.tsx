@@ -64,7 +64,7 @@ const ManageServices = () => {
 
   const [keyword, setKeyword] = useState("");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [status, setStatus] = useState<StatusFilter>("active");
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(6);
   const searchTimer = useRef<number | undefined>(undefined);
@@ -211,7 +211,7 @@ const ManageServices = () => {
         ) : (
           <>
             <div className="bg-white rounded-[14px] border border-spa-line overflow-x-auto">
-              <table className="w-full min-w-205 border-collapse text-sm text-left">
+              <table className="w-full min-w-215 border-collapse text-sm text-left">
                 <thead className="text-[13px] text-spa-muted">
                   <tr>
                     <th
@@ -315,7 +315,7 @@ const ManageServices = () => {
                             aria-label={`${service.active ? "Deactivate" : "Activate"} ${service.name}`}
                             disabled={isToggling && toggling?.id === service.id}
                             onClick={() => toggleActive(service)}
-                            className={`min-h-11 px-3.5 rounded-[10px] border font-medium cursor-pointer
+                            className={`min-h-11 min-w-28 px-3.5 text-center rounded-[10px] border font-medium cursor-pointer
                                         focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green
                                         disabled:opacity-50 disabled:cursor-not-allowed
                                         ${

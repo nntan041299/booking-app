@@ -96,7 +96,7 @@ const ManageEmployees = () => {
   const [keyword, setKeyword] = useState("");
   const [search, setSearch] = useState("");
   const [service, setService] = useState(ALL_SERVICES);
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [status, setStatus] = useState<StatusFilter>("active");
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const searchTimer = useRef<number | undefined>(undefined);
@@ -359,7 +359,7 @@ const ManageEmployees = () => {
                               isToggling && toggling?.id === employee.id
                             }
                             onClick={() => toggleActive(employee)}
-                            className={`min-h-11 px-3.5 rounded-[10px] border font-medium cursor-pointer
+                            className={`min-h-11 min-w-28 px-3.5 text-center rounded-[10px] border font-medium cursor-pointer
                                         focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green
                                         disabled:opacity-50 disabled:cursor-not-allowed
                                         ${
