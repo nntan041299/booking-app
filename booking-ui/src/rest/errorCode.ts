@@ -28,6 +28,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
   "00022": "Appointment must start in the future",
   "00023": "Appointment is outside the employee's working hours",
   "00024": "That time slot is already booked",
+  "00025": "Resource name already exists",
+  "00026": "Resource not found",
 };
 
 interface ApiErrorBody {

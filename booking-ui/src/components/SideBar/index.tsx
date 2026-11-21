@@ -64,6 +64,17 @@ const NAV_ITEMS: NavItem[] = [
       </NavIcon>
     ),
   },
+  {
+    path: "/admin/resources",
+    label: "Resources",
+    role: "ADMIN",
+    icon: (
+      <NavIcon>
+        <path d="M3 9l9-5 9 5-9 5-9-5z" />
+        <path d="M3 14l9 5 9-5" />
+      </NavIcon>
+    ),
+  },
 ];
 
 interface SideBarProps {

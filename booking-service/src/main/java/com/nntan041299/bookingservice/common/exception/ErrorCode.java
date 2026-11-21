@@ -38,6 +38,8 @@ public enum ErrorCode {
     APPOINTMENT_IN_PAST("00022", "Appointment must start in the future"),
     OUTSIDE_WORKING_HOURS("00023", "Appointment is outside the employee's working hours"),
     TIME_SLOT_UNAVAILABLE("00024", "The selected time slot is already booked"),
+    RESOURCE_NAME_ALREADY_EXISTS("00025", "Resource name already exists"),
+    RESOURCE_NOT_FOUND("00026", "Resource not found"),
     INTERNAL_ERROR("99999", "An unexpected error occurred");
 
     private final String code;

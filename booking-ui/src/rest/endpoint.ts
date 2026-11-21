@@ -8,5 +8,6 @@ export const ENDPOINT = {
   SERVICES: "booking-service/api/services",
   ADMIN_SERVICES: "booking-service/api/admin/services",
   ADMIN_EMPLOYEES: "booking-service/api/admin/employees",
+  ADMIN_RESOURCES: "booking-service/api/admin/resources",
   REFRESH_TOKEN: "booking-service/api/auth/refresh",
 } as const;
