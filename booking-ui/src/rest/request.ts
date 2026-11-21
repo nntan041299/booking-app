@@ -155,6 +155,10 @@ export const request = {
     return await axios.put(path, body, { headers });
   },
 
+  patch: async ({ path, body, headers }: RequestParams) => {
+    return await axios.patch(path, body, { headers });
+  },
+
   delete: async ({ path, body, headers }: RequestParams) => {
     return await axios.delete(path, { headers, data: body });
   },

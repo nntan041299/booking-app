@@ -29,9 +29,9 @@ const Home = () => {
               <i className="pi pi-list text-xs mr-2" />
               Manage services
             </Button>
-            <Button onClick={() => navigate("/admin/employees/new")}>
-              <i className="pi pi-plus text-xs mr-2" />
-              Create employee
+            <Button onClick={() => navigate("/admin/employees")}>
+              <i className="pi pi-users text-xs mr-2" />
+              Manage employees
             </Button>
           </div>
         )}

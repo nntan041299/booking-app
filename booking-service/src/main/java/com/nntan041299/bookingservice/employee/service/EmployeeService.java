@@ -6,15 +6,21 @@ import com.nntan041299.bookingservice.auth.repository.UserRepository;
 import com.nntan041299.bookingservice.catalog.repository.ServiceRepository;
 import com.nntan041299.bookingservice.common.exception.ErrorCode;
 import com.nntan041299.bookingservice.employee.dto.CreateEmployeeRequest;
+import com.nntan041299.bookingservice.common.dto.PageResponse;
 import com.nntan041299.bookingservice.employee.dto.EmployeeResponse;
+import com.nntan041299.bookingservice.employee.dto.EmployeeSearchCriteria;
 import com.nntan041299.bookingservice.employee.dto.UpdateEmployeeRequest;
 import com.nntan041299.bookingservice.employee.dto.WorkingHoursRequest;
 import com.nntan041299.bookingservice.employee.entity.Employee;
 import com.nntan041299.bookingservice.employee.entity.EmployeeWorkingHours;
 import com.nntan041299.bookingservice.employee.mapper.EmployeeMapper;
 import com.nntan041299.bookingservice.employee.repository.EmployeeRepository;
+import com.nntan041299.bookingservice.employee.repository.EmployeeSpecifications;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +32,8 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class EmployeeService {
+
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
@@ -58,6 +66,26 @@ public class EmployeeService {
                 .build();
 
         return employeeMapper.toResponse(employeeRepository.save(employee));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<EmployeeResponse> search(EmployeeSearchCriteria criteria, int page, int size) {
+        Pageable pageable = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), MAX_PAGE_SIZE),
+                Sort.by("fullName").ascending());
+        return PageResponse.from(employeeRepository
+                .findAll(EmployeeSpecifications.from(criteria), pageable)
+                .map(employeeMapper::toResponse));
+    }
+
+    /**
+     * Removing an employee deactivates them (and their login) rather than deleting the row,
+     * because appointments reference them. Idempotent.
+     */
+    @Transactional
+    public void remove(Long id) {
+        update(id, new UpdateEmployeeRequest(null, null, null, false, null, null));
     }
 
     @Transactional

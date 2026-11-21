@@ -18,6 +18,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: "pi-list",
     role: "ADMIN",
   },
+  {
+    path: "/admin/employees",
+    label: "Employees",
+    icon: "pi-users",
+    role: "ADMIN",
+  },
 ];
 
 interface SideBarProps {
