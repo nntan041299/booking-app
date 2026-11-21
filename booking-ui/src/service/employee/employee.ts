@@ -48,6 +48,8 @@ export interface SearchEmployeesParams {
   keyword?: string;
   /** Omit to include both active and inactive employees. */
   active?: boolean;
+  /** Only employees who perform this service. */
+  serviceId?: number;
   page?: number;
   size?: number;
 }
@@ -55,6 +57,7 @@ export interface SearchEmployeesParams {
 export const searchEmployees = async ({
   keyword,
   active,
+  serviceId,
   page = 0,
   size = 10,
 }: SearchEmployeesParams = {}): Promise<EmployeePage> => {
@@ -63,6 +66,7 @@ export const searchEmployees = async ({
     size: String(size),
   });
   if (active !== undefined) query.set("active", String(active));
+  if (serviceId !== undefined) query.set("serviceId", String(serviceId));
   if (keyword) query.set("keyword", keyword);
   const res = await request.get({
     path: `${ENDPOINT.ADMIN_EMPLOYEES}?${query}`,

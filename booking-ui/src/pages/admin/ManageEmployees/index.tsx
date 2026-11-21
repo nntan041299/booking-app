@@ -14,6 +14,7 @@ import Loading from "@/components/Loading";
 import Modal from "@/components/Modal";
 import Pagination from "@/components/Pagination";
 import { selectUser } from "@/redux/user/selectors";
+import { searchAdminServices } from "@/service/catalog";
 import {
   removeEmployee,
   searchEmployees,
@@ -22,19 +23,7 @@ import {
 import { getErrorMessage } from "@/rest";
 import { DAYS, toTimeInput } from "./constants";
 
-type StatusFilter = "all" | "active" | "inactive";
-
-const STATUS_TO_ACTIVE: Record<StatusFilter, boolean | undefined> = {
-  all: undefined,
-  active: true,
-  inactive: false,
-};
-
-const STATUS_OPTIONS = [
-  { value: "all", label: "All statuses" },
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-];
+const ALL_SERVICES = "all";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50].map((n) => ({
   value: String(n),
@@ -93,7 +82,7 @@ const ManageEmployees = () => {
 
   const [keyword, setKeyword] = useState("");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [service, setService] = useState(ALL_SERVICES);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [removing, setRemoving] = useState<EmployeeItem | null>(null);
@@ -101,12 +90,28 @@ const ManageEmployees = () => {
 
   useEffect(() => () => window.clearTimeout(searchTimer.current), []);
 
+  // TODO: paginate the service dropdown. For now this loads a single page of
+  // up to 100 services (the backend's maximum page size), so any services
+  // beyond the first 100 cannot be picked as a filter. Switch to loading more
+  // on scroll or on search once the catalog grows past that.
+  const { data: servicePage } = useQuery({
+    queryKey: ["admin-services", "filter"],
+    queryFn: () => searchAdminServices({ active: true, size: 100 }),
+  });
+  const serviceOptions = [
+    { value: ALL_SERVICES, label: "All services" },
+    ...(servicePage?.content ?? []).map((s) => ({
+      value: String(s.id),
+      label: s.name,
+    })),
+  ];
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["admin-employees", search, status, page, size],
+    queryKey: ["admin-employees", search, service, page, size],
     queryFn: () =>
       searchEmployees({
         keyword: search,
-        active: STATUS_TO_ACTIVE[status],
+        serviceId: service === ALL_SERVICES ? undefined : Number(service),
         page,
         size,
       }),
@@ -204,19 +209,20 @@ const ManageEmployees = () => {
             />
           </div>
           <div className="flex flex-col gap-1.5 basis-55 min-w-0">
-            <span id="employee-status-label" className={fieldLabel}>
-              Status
+            <span id="employee-service-label" className={fieldLabel}>
+              Service
             </span>
             <Dropdown
-              id="employee-status"
-              labelId="employee-status-label"
-              value={status}
-              options={STATUS_OPTIONS}
+              id="employee-service"
+              labelId="employee-service-label"
+              value={service}
+              options={serviceOptions}
               onChange={(v) => {
-                setStatus(v as StatusFilter);
+                setService(v);
                 setPage(0);
               }}
-              menuWidth="w-full min-w-50"
+              searchable
+              menuWidth="w-75"
             />
           </div>
         </div>

@@ -8,6 +8,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public final class EmployeeSpecifications {
 
@@ -24,6 +25,9 @@ public final class EmployeeSpecifications {
             }
             if (criteria.active() != null) {
                 predicates.add(cb.equal(root.get("active"), criteria.active()));
+            }
+            if (criteria.serviceId() != null) {
+                predicates.add(cb.isMember(criteria.serviceId(), root.<Set<Long>>get("serviceIds")));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
