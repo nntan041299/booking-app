@@ -4,7 +4,7 @@ import Dropdown from "@/components/Dropdown";
 import { searchAdminServices } from "@/service/catalog";
 import { updateEmployee, type EmployeeItem } from "@/service/employee";
 import { getErrorMessage } from "@/rest";
-import { Section, SectionFooter } from "./Section";
+import { Section, SectionFooter } from "@/components/Section";
 
 interface ServicesSectionProps {
   employee: EmployeeItem;

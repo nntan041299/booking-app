@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import {
   keepPreviousData,
   useMutation,
@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-query";
 import Layout from "@/layouts/Layout";
 import Button from "@/components/Button";
-import Input from "@/components/Input";
+import Dropdown from "@/components/Dropdown";
 import Loading from "@/components/Loading";
 import Modal from "@/components/Modal";
 import Pagination from "@/components/Pagination";
@@ -20,20 +20,29 @@ import {
   type ServiceItem,
 } from "@/service/catalog";
 import { getErrorMessage } from "@/rest";
-import ServiceFormModal from "./ServiceFormModal";
 
-type StatusFilter = "all" | "active" | "inactive";
+const PAGE_SIZE_OPTIONS = [6, 12, 24].map((n) => ({
+  value: String(n),
+  label: String(n),
+}));
 
-const STATUS_TO_ACTIVE: Record<StatusFilter, boolean | undefined> = {
-  all: undefined,
-  active: true,
-  inactive: false,
-};
+const SEARCH_DEBOUNCE_MS = 300;
+
+// Tile colors from the design, cycled per row.
+const TILE_COLORS = [
+  { bg: "#E3EEE9", fg: "#1F4238" },
+  { bg: "#F3E3D6", fg: "#6B3A1E" },
+  { bg: "#E1E8F3", fg: "#27415F" },
+  { bg: "#F1E1E6", fg: "#6A2B3E" },
+  { bg: "#ECE8D3", fg: "#4F4719" },
+];
 
 const formatPrice = (price: number) =>
-  new Intl.NumberFormat(undefined, {
+  new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(price);
 
 const ManageServices = () => {
@@ -42,22 +51,16 @@ const ManageServices = () => {
 
   const [keyword, setKeyword] = useState("");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(0);
-  // undefined = closed, null = creating, otherwise editing that service
-  const [editing, setEditing] = useState<ServiceItem | null | undefined>(
-    undefined,
-  );
+  const [size, setSize] = useState(6);
   const [removing, setRemoving] = useState<ServiceItem | null>(null);
+  const searchTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(searchTimer.current), []);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["admin-services", search, status, page],
-    queryFn: () =>
-      searchAdminServices({
-        keyword: search,
-        active: STATUS_TO_ACTIVE[status],
-        page,
-      }),
+    queryKey: ["admin-services", search, page, size],
+    queryFn: () => searchAdminServices({ keyword: search, page, size }),
     placeholderData: keepPreviousData,
   });
 
@@ -83,10 +86,13 @@ const ManageServices = () => {
   // The user is fetched by Layout; wait for it before deciding access.
   if (id && role !== "ADMIN") return <Navigate to="/" replace />;
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(0);
-    setSearch(keyword.trim());
+  const handleKeyword = (value: string) => {
+    setKeyword(value);
+    window.clearTimeout(searchTimer.current);
+    searchTimer.current = window.setTimeout(() => {
+      setPage(0);
+      setSearch(value.trim());
+    }, SEARCH_DEBOUNCE_MS);
   };
 
   const closeRemove = () => {
@@ -98,151 +104,214 @@ const ManageServices = () => {
   return (
     <Layout>
       <Loading isLoading={isLoading || isRemoving} />
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 space-y-6">
-        <div className="flex items-start justify-between gap-4">
+      <div
+        className="px-4 md:px-12 py-8 md:py-10 flex flex-col gap-7 text-spa-ink"
+        style={{ fontFamily: "var(--font-sans)" }}
+      >
+        <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1
-              className="text-2xl font-bold text-surface-900"
-              style={{ fontFamily: "var(--font-display)" }}
+              className="m-0 text-4xl font-semibold"
+              style={{ fontFamily: "var(--font-heading)" }}
             >
-              Manage services
+              Services
             </h1>
-            <p className="text-sm text-surface-500 mt-1">
-              Search, add, edit and remove the services customers can book.
+            <p className="mt-1.5 text-[15px] text-spa-muted">
+              The treatments guests can book, with their length and price.
             </p>
           </div>
-          <Button onClick={() => setEditing(null)} className="flex-shrink-0">
-            <i className="pi pi-plus text-xs mr-2" />
+          <Link
+            to="/admin/services/new"
+            className="inline-flex items-center gap-2 min-h-11 px-5 rounded-[10px] bg-spa-green text-white text-[15px] font-semibold no-underline
+                       hover:bg-spa-green-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green"
+          >
+            <svg
+              aria-hidden="true"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
             Add service
-          </Button>
-        </div>
+          </Link>
+        </header>
 
-        <form onSubmit={handleSearch} className="flex flex-wrap gap-2">
-          <div className="flex-1 min-w-48">
-            <Input
-              name="keyword"
+        <div className="flex flex-wrap gap-3">
+          <div className="flex-1 basis-70 flex flex-col gap-1.5">
+            <label
+              htmlFor="service-search"
+              className="text-[13px] font-medium text-spa-text"
+            >
+              Search
+            </label>
+            <input
+              id="service-search"
+              type="search"
               value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="Search by name or description"
+              onChange={(e) => handleKeyword(e.target.value)}
+              placeholder="Search by service name"
+              className="h-11 box-border px-3.5 rounded-[10px] border border-spa-border-strong bg-white text-[15px] placeholder:text-spa-muted
+                         focus:outline-2 focus:outline-offset-2 focus:outline-spa-green"
             />
           </div>
-          <select
-            aria-label="Status filter"
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value as StatusFilter);
-              setPage(0);
-            }}
-            className="px-3 py-2.5 rounded-xl border border-surface-200 bg-white text-sm text-surface-700"
-          >
-            <option value="all">All statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-          <Button type="submit">Search</Button>
-        </form>
+        </div>
 
         {isLoading ? null : isError ? (
-          <p className="text-sm text-red-600">Could not load services.</p>
+          <p className="text-sm text-spa-danger">Could not load services.</p>
         ) : !data?.content.length ? (
-          <p className="text-sm text-surface-500">No services found.</p>
+          <p className="text-sm text-spa-muted">No services found.</p>
         ) : (
           <>
-            <div className="bg-white rounded-2xl border border-surface-200 overflow-x-auto">
-              <table
-                className="w-full text-sm text-left"
-                style={{ fontFamily: "var(--font-sans)" }}
-              >
-                <thead className="text-xs uppercase tracking-widest text-surface-500 border-b border-surface-100">
+            <div className="bg-white rounded-[14px] border border-spa-line overflow-x-auto">
+              <table className="w-full min-w-180 border-collapse text-sm text-left">
+                <thead className="text-[13px] text-spa-muted">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Name</th>
-                    <th className="px-4 py-3 font-semibold">Duration</th>
-                    <th className="px-4 py-3 font-semibold">Price</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold text-right">
+                    <th
+                      scope="col"
+                      className="px-5 py-3.5 font-medium border-b border-spa-line"
+                    >
+                      Service
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3.5 font-medium border-b border-spa-line"
+                    >
+                      Duration
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3.5 font-medium border-b border-spa-line"
+                    >
+                      Price
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-3.5 font-medium border-b border-spa-line text-right"
+                    >
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.content.map((service) => (
-                    <tr
-                      key={service.id}
-                      className="border-b border-surface-100 last:border-0"
-                    >
-                      <td className="px-4 py-3 max-w-xs">
-                        <p className="font-medium text-surface-900">
-                          {service.name}
-                        </p>
-                        {service.description && (
-                          <p className="text-xs text-surface-500 truncate">
-                            {service.description}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-surface-700">
-                        {service.durationMinutes} min
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-surface-700">
-                        {formatPrice(service.price)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                            service.active
-                              ? "bg-sage-100 text-sage-600"
-                              : "bg-surface-100 text-surface-500"
-                          }`}
-                        >
-                          {service.active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-1">
-                          <button
-                            type="button"
+                  {data.content.map((service, index) => {
+                    const color = TILE_COLORS[index % TILE_COLORS.length];
+                    return (
+                      <tr key={service.id}>
+                        <td className="px-5 py-4 border-b border-spa-divider">
+                          <div className="flex items-center gap-4">
+                            <div
+                              aria-hidden="true"
+                              className="w-[72px] h-[72px] rounded-xl flex-shrink-0 flex items-center justify-center"
+                              style={{ background: color.bg, color: color.fg }}
+                            >
+                              <svg
+                                width="28"
+                                height="28"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.6"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M12 21c-4.5-2-7-5.5-7-9.5C5 8 7.5 5 12 3c4.5 2 7 5 7 8.5 0 4-2.5 7.5-7 9.5z" />
+                                <path d="M12 8v13" />
+                              </svg>
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-[15px]">
+                                  {service.name}
+                                </span>
+                                {!service.active && (
+                                  <span className="px-2 py-0.5 rounded-full bg-spa-divider text-spa-text text-xs font-semibold">
+                                    Inactive
+                                  </span>
+                                )}
+                              </div>
+                              {service.description && (
+                                <div className="mt-0.5 max-w-90 text-spa-muted truncate">
+                                  {service.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-4 border-b border-spa-divider whitespace-nowrap">
+                          {service.durationMinutes} min
+                        </td>
+                        <td className="px-3 py-4 border-b border-spa-divider font-semibold whitespace-nowrap">
+                          {formatPrice(service.price)}
+                        </td>
+                        <td className="px-5 py-4 border-b border-spa-divider text-right whitespace-nowrap">
+                          <Link
+                            to={`/admin/services/${service.id}`}
+                            state={{ service }}
                             aria-label={`Edit ${service.name}`}
-                            onClick={() => setEditing(service)}
-                            className="p-2 rounded-lg text-surface-500 hover:bg-surface-100 cursor-pointer"
+                            className="inline-flex items-center min-h-11 px-3.5 mr-2 rounded-[10px] border border-spa-border-strong bg-white text-spa-ink font-medium no-underline hover:bg-spa-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green"
                           >
-                            <i className="pi pi-pencil text-sm" />
-                          </button>
+                            Edit
+                          </Link>
                           <button
                             type="button"
                             aria-label={`Remove ${service.name}`}
                             disabled={!service.active}
                             onClick={() => setRemoving(service)}
-                            className="p-2 rounded-lg text-red-500 hover:bg-red-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            className="min-h-11 px-3.5 rounded-[10px] border border-spa-danger-line bg-white text-spa-danger font-medium cursor-pointer hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
                           >
-                            <i className="pi pi-trash text-sm" />
+                            Remove
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
-            <Pagination
-              page={data.number}
-              totalPages={data.totalPages}
-              onPageChange={setPage}
-            />
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                <p className="m-0 text-sm text-spa-muted">
+                  Showing {data.number * size + 1} to{" "}
+                  {data.number * size + data.content.length} of{" "}
+                  {data.totalElements} services
+                </p>
+                <div className="flex items-center gap-2">
+                  <span
+                    id="service-page-size-label"
+                    className="text-sm text-spa-muted"
+                  >
+                    Rows per page
+                  </span>
+                  <Dropdown
+                    id="service-page-size"
+                    labelId="service-page-size-label"
+                    value={String(size)}
+                    options={PAGE_SIZE_OPTIONS}
+                    onChange={(v) => {
+                      setSize(Number(v));
+                      setPage(0);
+                    }}
+                    openUp
+                    className="min-w-21 !px-3 text-sm"
+                    menuWidth="w-35"
+                  />
+                </div>
+              </div>
+              <Pagination
+                page={data.number}
+                totalPages={data.totalPages}
+                onPageChange={setPage}
+              />
+            </div>
           </>
         )}
       </div>
-
-      {editing !== undefined && (
-        <ServiceFormModal
-          service={editing}
-          onClose={() => setEditing(undefined)}
-          onSaved={() => {
-            setEditing(undefined);
-            refresh();
-          }}
-        />
-      )}
 
       {removing && (
         <Modal title="Remove service" onClose={closeRemove}>

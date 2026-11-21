@@ -10,7 +10,7 @@ import {
   type EmployeeItem,
 } from "@/service/employee";
 import { getErrorMessage } from "@/rest";
-import { Section, SectionFooter } from "./Section";
+import { Section, SectionFooter } from "@/components/Section";
 
 export type ProfilePatch = Pick<
   EmployeeItem,

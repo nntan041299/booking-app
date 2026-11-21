@@ -7,7 +7,7 @@ import {
 } from "@/service/employee";
 import { getErrorMessage } from "@/rest";
 import { DAYS, toTimeInput } from "../ManageEmployees/constants";
-import { Section, SectionFooter } from "./Section";
+import { Section, SectionFooter } from "@/components/Section";
 
 interface Range {
   start: string;

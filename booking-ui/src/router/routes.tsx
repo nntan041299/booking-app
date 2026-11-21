@@ -6,7 +6,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const Home = lazy(() => import("@/pages/Home"));
 const Account = lazy(() => import("@/pages/Account"));
 const ManageServices = lazy(() => import("@/pages/admin/ManageServices"));
-const CreateService = lazy(() => import("@/pages/admin/CreateService"));
+const ServiceEdit = lazy(() => import("@/pages/admin/ServiceEdit"));
 const ManageEmployees = lazy(() => import("@/pages/admin/ManageEmployees"));
 const EmployeeEdit = lazy(() => import("@/pages/admin/EmployeeEdit"));
 
@@ -26,7 +26,11 @@ const routes: Record<string, RouteObject[]> = {
     },
     {
       path: "/admin/services/new",
-      element: <CreateService />,
+      element: <ServiceEdit key="create" mode="create" />,
+    },
+    {
+      path: "/admin/services/:id",
+      element: <ServiceEdit key="edit" mode="edit" />,
     },
     {
       path: "/admin/employees",
