@@ -28,6 +28,11 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex);
     }
 
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
+        return build(HttpStatus.CONFLICT, ex);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         return build(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST);

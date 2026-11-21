@@ -33,6 +33,11 @@ public enum ErrorCode {
     EMPLOYEE_NOT_FOUND("00017", "Employee not found"),
     INVALID_WORKING_HOURS("00018", "Working hours are invalid: start must be before end and ranges on the same day must not overlap"),
     SERVICE_NOT_FOUND("00019", "One or more services do not exist"),
+    SERVICE_NOT_AVAILABLE("00020", "Service is not available for booking"),
+    EMPLOYEE_NOT_AVAILABLE("00021", "Employee is not available for this service"),
+    APPOINTMENT_IN_PAST("00022", "Appointment must start in the future"),
+    OUTSIDE_WORKING_HOURS("00023", "Appointment is outside the employee's working hours"),
+    TIME_SLOT_UNAVAILABLE("00024", "The selected time slot is already booked"),
     INTERNAL_ERROR("99999", "An unexpected error occurred");
 
     private final String code;
