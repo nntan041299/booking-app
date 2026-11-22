@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { FaApple, FaFacebookF, FaGithub, FaGoogle } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
 
+import AuthLayout from "@/components/AuthLayout";
+import PasswordField from "@/components/AuthLayout/PasswordField";
+import Button from "@/components/Button";
+import Field from "@/components/Field";
+import Input from "@/components/Input";
 import Loading from "@/components/Loading";
 import { useLogin } from "@/hook/useLogin";
 import { getGoogleLoginUrl } from "@/service/auth";
@@ -13,11 +16,8 @@ interface LoginErrors {
 }
 
 const LoginPage = () => {
-  const navigate = useNavigate();
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
 
   const [loginErrors, setLoginErrors] = useState<LoginErrors>({
     username: "",
@@ -42,148 +42,84 @@ const LoginPage = () => {
     login({ username, password });
   }
 
-  function handleSocialLogin(provider: string) {
-    if (provider === "google") window.location.href = getGoogleLoginUrl();
+  function handleGoogleLogin() {
+    window.location.href = getGoogleLoginUrl();
   }
 
   return (
-    <div className="auth-screen">
+    <>
       <Loading isLoading={isPending} />
 
-      <div className="auth-card">
-        <div className="auth-card-header">
-          <span className="auth-brand-name">
-            Booking <span>App</span>
-          </span>
-          <span className="auth-brand-pill">Welcome</span>
-        </div>
-
-        <div className="auth-card-body">
-          <div className="mb-5">
-            <h1 className="auth-heading">Welcome back</h1>
-            <p className="auth-subheading">Sign in to keep shopping</p>
+      <AuthLayout
+        title="Welcome back"
+        subtitle="Sign in to manage your bookings."
+        tagline="Welcome back to your calm corner."
+        taglineText="Sign in to book treatments, manage your appointments and pick up where you left off."
+        onGoogle={handleGoogleLogin}
+        disabled={isPending}
+        switchPrompt="New here?"
+        switchLabel="Create account"
+        switchTo="/signup"
+      >
+        {isError && (
+          <div
+            role="alert"
+            className="rounded-[10px] border border-spa-danger-line bg-[#fdf3f1] px-3.5 py-3 text-sm text-spa-danger"
+          >
+            {getErrorMessage(error)}
           </div>
+        )}
 
-          {isError && (
-            <div className="alert-error mb-4">
-              {getErrorMessage(error)}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4.5">
+          <Field
+            label="Email or username"
+            htmlFor="username"
+            error={loginErrors.username}
+          >
+            <Input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                if (loginErrors.username)
+                  setLoginErrors((p) => ({ ...p, username: "" }));
+              }}
+              onBlur={() => loginValidate({ username, password })}
+              disabled={isPending}
+              placeholder="you@example.com"
+              autoComplete="username"
+              aria-invalid={Boolean(loginErrors.username)}
+              className={`h-12 ${loginErrors.username ? "border-spa-danger" : ""}`}
+            />
+          </Field>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <label className="block">
-              <span className="form-label">Email / Username</span>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => {
-                  setUsername(e.target.value);
-                  if (loginErrors.username)
-                    setLoginErrors((p) => ({ ...p, username: "" }));
-                }}
-                onBlur={() => loginValidate({ username, password })}
-                disabled={isPending}
-                placeholder="you@example.com"
-                aria-invalid={!!loginErrors.username}
-                className={`form-input ${loginErrors.username ? "form-input-error" : ""}`}
-              />
-              {loginErrors.username && (
-                <small className="form-field-error">
-                  {loginErrors.username}
-                </small>
-              )}
-            </label>
+          <PasswordField
+            id="password"
+            label="Password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (loginErrors.password)
+                setLoginErrors((p) => ({ ...p, password: "" }));
+            }}
+            onBlur={() => loginValidate({ username, password })}
+            disabled={isPending}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            error={loginErrors.password}
+          />
 
-            <label className="block">
-              <span className="form-label">Password</span>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (loginErrors.password)
-                      setLoginErrors((p) => ({ ...p, password: "" }));
-                  }}
-                  onBlur={() => loginValidate({ username, password })}
-                  disabled={isPending}
-                  placeholder="••••••••"
-                  aria-invalid={!!loginErrors.password}
-                  className={`form-input pr-14 ${loginErrors.password ? "form-input-error" : ""}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((p) => !p)}
-                  className="input-toggle-btn"
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
-              </div>
-              {loginErrors.password && (
-                <small className="form-field-error">
-                  {loginErrors.password}
-                </small>
-              )}
-            </label>
-
-            <button disabled={isPending} className="btn-primary mt-1">
-              {isPending ? "Signing in…" : "Sign In"}
-            </button>
-          </form>
-
-          <div className="auth-divider">
-            <span className="auth-divider-line" />
-            <em className="auth-divider-label">or</em>
-            <span className="auth-divider-line" />
-          </div>
-
-          <div className="flex justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleSocialLogin("google")}
-              className="btn-social"
-              aria-label="Continue with Google"
-            >
-              <FaGoogle size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSocialLogin("facebook")}
-              className="btn-social"
-              aria-label="Continue with Facebook"
-            >
-              <FaFacebookF size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSocialLogin("github")}
-              className="btn-social"
-              aria-label="Continue with GitHub"
-            >
-              <FaGithub size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSocialLogin("apple")}
-              className="btn-social"
-              aria-label="Continue with Apple"
-            >
-              <FaApple size={14} />
-            </button>
-          </div>
-
-          <p className="auth-footer-text">
-            New here?{" "}
-            <span
-              className="auth-footer-link"
-              onClick={() => navigate("/signup")}
-            >
-              Create account
-            </span>
-          </p>
-        </div>
-      </div>
-    </div>
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="w-full min-h-12 mt-1 text-base"
+          >
+            {isPending ? "Signing in…" : "Sign in"}
+          </Button>
+        </form>
+      </AuthLayout>
+    </>
   );
 };
 

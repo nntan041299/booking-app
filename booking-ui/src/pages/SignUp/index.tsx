@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { FaApple, FaFacebookF, FaGithub, FaGoogle } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import AuthLayout from "@/components/AuthLayout";
+import PasswordField from "@/components/AuthLayout/PasswordField";
+import Button from "@/components/Button";
+import Field from "@/components/Field";
+import Input from "@/components/Input";
 import Loading from "@/components/Loading";
 import { getGoogleLoginUrl } from "@/service/auth";
 import { useRegister } from "@/hook/useRegister";
@@ -15,16 +18,11 @@ interface SignupErrors {
 }
 
 const SignUp = () => {
-  const navigate = useNavigate();
-
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [signupErrors, setSignupErrors] = useState<SignupErrors>({
     fullName: "",
@@ -60,6 +58,8 @@ const SignUp = () => {
     else if (!emailPattern.test(values.email.trim()))
       next.email = "Invalid email";
     if (!values.password) next.password = "Required";
+    else if (values.password.length < 8)
+      next.password = "At least 8 characters";
     if (!values.confirmPassword) next.confirmPassword = "Required";
     if (
       values.password &&
@@ -83,230 +83,136 @@ const SignUp = () => {
     if (signupErrors[key]) setSignupErrors((prev) => ({ ...prev, [key]: "" }));
   };
 
-  function handleSocialLogin(provider: string) {
-    if (provider === "google") window.location.href = getGoogleLoginUrl();
+  function handleGoogleLogin() {
+    window.location.href = getGoogleLoginUrl();
   }
 
   return (
-    <div className="auth-screen">
+    <>
       <Loading isLoading={isPending} />
 
-      <div className="auth-card auth-card-wide">
-        <div className="auth-card-header">
-          <span className="auth-brand-name">
-            Booking <span>App</span>
-          </span>
-          <span className="auth-brand-pill">Welcome</span>
-        </div>
-
-        <div className="auth-card-body">
-          <div className="mb-5">
-            <h1 className="auth-heading">Start booking</h1>
-            <p className="auth-subheading">Create your free account</p>
+      <AuthLayout
+        title="Create your account"
+        subtitle="Join to book treatments and keep track of your visits."
+        tagline="A little time for yourself, one tap away."
+        taglineText="Create an account to browse our services, choose a time that suits you and book in seconds."
+        wide
+        onGoogle={handleGoogleLogin}
+        disabled={isPending}
+        switchPrompt="Already have an account?"
+        switchLabel="Sign in"
+        switchTo="/"
+      >
+        {isError && (
+          <div
+            role="alert"
+            className="rounded-[10px] border border-spa-danger-line bg-[#fdf3f1] px-3.5 py-3 text-sm text-spa-danger"
+          >
+            {getErrorMessage(error)}
           </div>
+        )}
 
-          {isError && (
-            <div className="alert-error mb-4">
-              {getErrorMessage(error)}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            {/* Row 1: Full name + Username */}
-            <div className="form-row">
-              <label className="block">
-                <span className="form-label">Full name</span>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => {
-                    setFullName(e.target.value);
-                    clearError("fullName");
-                  }}
-                  onBlur={() => signupValidate()}
-                  disabled={isPending}
-                  placeholder="John Doe"
-                  aria-invalid={!!signupErrors.fullName}
-                  className={`form-input ${signupErrors.fullName ? "form-input-error" : ""}`}
-                />
-                {signupErrors.fullName && (
-                  <small className="form-field-error">
-                    {signupErrors.fullName}
-                  </small>
-                )}
-              </label>
-
-              <label className="block">
-                <span className="form-label">Username</span>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    clearError("username");
-                  }}
-                  onBlur={() => signupValidate()}
-                  disabled={isPending}
-                  placeholder="johndoe"
-                  aria-invalid={!!signupErrors.username}
-                  className={`form-input ${signupErrors.username ? "form-input-error" : ""}`}
-                />
-                {signupErrors.username && (
-                  <small className="form-field-error">
-                    {signupErrors.username}
-                  </small>
-                )}
-              </label>
-            </div>
-
-            {/* Row 2: Email */}
-            <label className="block">
-              <span className="form-label">Email</span>
-              <input
-                type="email"
-                value={email}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4.5">
+            <Field
+              label="Full name"
+              htmlFor="fullName"
+              error={signupErrors.fullName}
+            >
+              <Input
+                id="fullName"
+                type="text"
+                value={fullName}
                 onChange={(e) => {
-                  setEmail(e.target.value);
-                  clearError("email");
+                  setFullName(e.target.value);
+                  clearError("fullName");
                 }}
-                onBlur={() => signupValidate()}
                 disabled={isPending}
-                placeholder="you@example.com"
-                aria-invalid={!!signupErrors.email}
-                className={`form-input ${signupErrors.email ? "form-input-error" : ""}`}
+                placeholder="John Doe"
+                autoComplete="name"
+                aria-invalid={Boolean(signupErrors.fullName)}
+                className={`h-12 ${signupErrors.fullName ? "border-spa-danger" : ""}`}
               />
-              {signupErrors.email && (
-                <small className="form-field-error">{signupErrors.email}</small>
-              )}
-            </label>
-
-            {/* Row 3: Password + Confirm */}
-            <div className="form-row">
-              <label className="block">
-                <span className="form-label">Password</span>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      clearError("password");
-                      clearError("confirmPassword");
-                    }}
-                    onBlur={() => signupValidate()}
-                    disabled={isPending}
-                    placeholder="••••••••"
-                    aria-invalid={!!signupErrors.password}
-                    className={`form-input pr-14 ${signupErrors.password ? "form-input-error" : ""}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((s) => !s)}
-                    disabled={isPending}
-                    className="input-toggle-btn"
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-                {signupErrors.password && (
-                  <small className="form-field-error">
-                    {signupErrors.password}
-                  </small>
-                )}
-              </label>
-
-              <label className="block">
-                <span className="form-label">Confirm password</span>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      clearError("confirmPassword");
-                    }}
-                    onBlur={() => signupValidate()}
-                    disabled={isPending}
-                    placeholder="••••••••"
-                    aria-invalid={!!signupErrors.confirmPassword}
-                    className={`form-input pr-14 ${signupErrors.confirmPassword ? "form-input-error" : ""}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword((s) => !s)}
-                    disabled={isPending}
-                    className="input-toggle-btn"
-                  >
-                    {showConfirmPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-                {signupErrors.confirmPassword && (
-                  <small className="form-field-error">
-                    {signupErrors.confirmPassword}
-                  </small>
-                )}
-              </label>
-            </div>
-
-            <button disabled={isPending} className="btn-primary mt-1">
-              {isPending ? "Creating account…" : "Create Account"}
-            </button>
-          </form>
-
-          <div className="auth-divider">
-            <span className="auth-divider-line" />
-            <em className="auth-divider-label">or</em>
-            <span className="auth-divider-line" />
+            </Field>
+            <Field
+              label="Username"
+              htmlFor="username"
+              error={signupErrors.username}
+            >
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  clearError("username");
+                }}
+                disabled={isPending}
+                placeholder="johndoe"
+                autoComplete="username"
+                aria-invalid={Boolean(signupErrors.username)}
+                className={`h-12 ${signupErrors.username ? "border-spa-danger" : ""}`}
+              />
+            </Field>
           </div>
 
-          <div className="flex justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleSocialLogin("google")}
+          <Field label="Email" htmlFor="email" error={signupErrors.email}>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clearError("email");
+              }}
               disabled={isPending}
-              className="btn-social"
-              aria-label="Continue with Google"
-            >
-              <FaGoogle size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSocialLogin("facebook")}
+              placeholder="you@example.com"
+              autoComplete="email"
+              aria-invalid={Boolean(signupErrors.email)}
+              className={`h-12 ${signupErrors.email ? "border-spa-danger" : ""}`}
+            />
+          </Field>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4.5">
+            <PasswordField
+              id="password"
+              label="Password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearError("password");
+              }}
               disabled={isPending}
-              className="btn-social"
-              aria-label="Continue with Facebook"
-            >
-              <FaFacebookF size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSocialLogin("github")}
+              placeholder="••••••••"
+              autoComplete="new-password"
+              hint="At least 8 characters."
+              error={signupErrors.password}
+            />
+            <PasswordField
+              id="confirmPassword"
+              label="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                clearError("confirmPassword");
+              }}
               disabled={isPending}
-              className="btn-social"
-              aria-label="Continue with GitHub"
-            >
-              <FaGithub size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSocialLogin("apple")}
-              disabled={isPending}
-              className="btn-social"
-              aria-label="Continue with Apple"
-            >
-              <FaApple size={14} />
-            </button>
+              placeholder="••••••••"
+              autoComplete="new-password"
+              error={signupErrors.confirmPassword}
+            />
           </div>
 
-          <p className="auth-footer-text">
-            Already have an account?{" "}
-            <a className="auth-footer-link" onClick={() => navigate("/")}>
-              Sign in
-            </a>
-          </p>
-        </div>
-      </div>
-    </div>
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="w-full min-h-12 mt-1 text-base"
+          >
+            {isPending ? "Creating account…" : "Create account"}
+          </Button>
+        </form>
+      </AuthLayout>
+    </>
   );
 };
 
