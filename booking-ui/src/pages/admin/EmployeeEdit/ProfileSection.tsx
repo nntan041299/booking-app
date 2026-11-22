@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { FaCamera, FaTimes } from "react-icons/fa";
+import { FaCamera } from "react-icons/fa";
 import Field from "@/components/Field";
 import Input from "@/components/Input";
 import PasswordInput from "@/components/PasswordInput";
@@ -210,17 +210,31 @@ export default function ProfileSection({
             {(avatarUrl || avatarFile) && (
               <button
                 type="button"
-                aria-label="Remove photo"
-                title="Remove photo"
+                aria-label="Remove image"
                 disabled={isPending}
                 onClick={() => {
                   setAvatarUrl("");
                   setAvatarFile(null);
                   touch();
                 }}
-                className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-white border border-spa-border-strong text-spa-muted shadow-sm flex items-center justify-center cursor-pointer hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green disabled:opacity-40 disabled:cursor-not-allowed"
+                className="absolute -top-2 -right-2 w-11 h-11 p-0 border-0 bg-transparent flex items-center justify-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green rounded-full"
               >
-                <FaTimes aria-hidden="true" className="text-xs" />
+                <span
+                  aria-hidden="true"
+                  className="w-7 h-7 rounded-full bg-spa-ink text-white flex items-center justify-center border-2 border-white shadow-[0_1px_4px_rgba(0,0,0,0.3)]"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                  >
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </span>
               </button>
             )}
           </div>
