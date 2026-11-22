@@ -63,6 +63,12 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED);
     }
 
+    @ExceptionHandler(ImageStorageException.class)
+    public ResponseEntity<ErrorResponse> handleImageStorage(ImageStorageException ex) {
+        log.error("Image storage failed: {}", ex.getDetail(), ex);
+        return build(HttpStatus.BAD_GATEWAY, ex);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
         log.error("Unhandled exception occurred", ex);

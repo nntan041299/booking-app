@@ -40,6 +40,8 @@ public enum ErrorCode {
     TIME_SLOT_UNAVAILABLE("00024", "The selected time slot is already booked"),
     RESOURCE_NAME_ALREADY_EXISTS("00025", "Resource name already exists"),
     RESOURCE_NOT_FOUND("00026", "Resource not found"),
+    INVALID_IMAGE("00027", "Upload a PNG, JPG or WebP image up to 5 MB"),
+    IMAGE_UPLOAD_FAILED("00028", "The image could not be uploaded, try again later"),
     INTERNAL_ERROR("99999", "An unexpected error occurred");
 
     private final String code;

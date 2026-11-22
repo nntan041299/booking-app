@@ -85,6 +85,15 @@ token:
 # External clients
 # ---------------------------------------------------------------------------
 app:
+  # Where images are hosted. "cloudinary" is the only provider for now; to switch,
+  # add another ImageStorageService implementation and change this value.
+  storage:
+    provider: ${IMAGE_STORAGE_PROVIDER:cloudinary}
+    folder-prefix: ${IMAGE_FOLDER_PREFIX:spa}
+    cloudinary:
+      cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+      api-key: ${CLOUDINARY_API_KEY:}
+      api-secret: ${CLOUDINARY_API_SECRET:}
   clients:
     googleUserInfo:
       url: https://www.googleapis.com
