@@ -18,7 +18,6 @@ import com.nntan041299.bookingservice.employee.repository.EmployeeRepository;
 import com.nntan041299.bookingservice.employee.repository.EmployeeSpecifications;
 import com.nntan041299.bookingservice.media.dto.ImageFolder;
 import com.nntan041299.bookingservice.media.service.ImageUploadService;
-import com.nntan041299.bookingservice.media.storage.StoredImage;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -27,8 +26,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Comparator;
@@ -64,7 +61,7 @@ public class EmployeeService {
             validateServices(request.getServiceIds());
         }
 
-        String avatarUrl = uploadAvatar(avatar);
+        String avatarUrl = imageUploadService.uploadInTransaction(avatar, ImageFolder.EMPLOYEES);
 
         User user = userRepository.save(User.builder()
                 .username(request.getUsername())
@@ -122,13 +119,13 @@ public class EmployeeService {
         if (request.getBio() != null) {
             employee.setBio(request.getBio());
         }
-        String newAvatarUrl = uploadAvatar(avatar);
+        String newAvatarUrl = imageUploadService.uploadInTransaction(avatar, ImageFolder.EMPLOYEES);
         boolean clearAvatar = newAvatarUrl == null && Boolean.TRUE.equals(request.getRemoveAvatar());
         if (newAvatarUrl != null || clearAvatar) {
             String oldAvatarUrl = employee.getAvatarUrl();
             employee.setAvatarUrl(newAvatarUrl);
             if (oldAvatarUrl != null) {
-                deleteImageAfterCommit(oldAvatarUrl);
+                imageUploadService.deleteByUrlAfterCommit(oldAvatarUrl);
             }
         }
         if (request.getActive() != null) {
@@ -145,36 +142,6 @@ public class EmployeeService {
         syncLinkedUser(employee, request);
 
         return employeeMapper.toResponse(employeeRepository.save(employee));
-    }
-
-    /**
-     * Uploads the avatar and returns its URL, or {@code null} when no file was sent. If the surrounding
-     * transaction rolls back, the uploaded image is removed again.
-     */
-    private String uploadAvatar(MultipartFile avatar) {
-        if (avatar == null || avatar.isEmpty()) {
-            return null;
-        }
-        StoredImage stored = imageUploadService.upload(avatar, ImageFolder.EMPLOYEES);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                if (status == STATUS_ROLLED_BACK) {
-                    imageUploadService.deleteByUrl(stored.url());
-                }
-            }
-        });
-        return stored.url();
-    }
-
-    /** Cleans up a replaced image only once the change is saved, so a rolled-back update keeps its image. */
-    private void deleteImageAfterCommit(String url) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                imageUploadService.deleteByUrl(url);
-            }
-        });
     }
 
     /** Keeps the login account's display name and enabled flag consistent with the employee profile. */

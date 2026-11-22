@@ -28,5 +28,8 @@ public class UpdateServiceRequest {
     @Digits(integer = 8, fraction = 2, message = "Invalid price format")
     private BigDecimal price;
 
+    /** {@code true} clears the current image. Ignored when a new image file is sent. */
+    private Boolean removeImage;
+
     private Boolean active;
 }

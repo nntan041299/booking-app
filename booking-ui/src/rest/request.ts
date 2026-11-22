@@ -193,6 +193,16 @@ export const request = {
     });
   },
 
+  putMultipart: async (
+    path: string,
+    body: Record<string, unknown>,
+    file?: { name: string; file: File | null },
+  ) => {
+    return await axios.put(path, toMultipart(body, file), {
+      headers: MULTIPART,
+    });
+  },
+
   patchMultipart: async (
     path: string,
     body: Record<string, unknown>,

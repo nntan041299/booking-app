@@ -7,11 +7,16 @@ export interface CreateServicePayload {
   price: number;
 }
 
-export const createService = async (payload: CreateServicePayload) => {
-  return request.post({
-    path: ENDPOINT.ADMIN_SERVICES,
-    body: payload as unknown as Record<string, unknown>,
-  });
+/** An optional image is sent in the same request and becomes the service image. */
+export const createService = async (
+  payload: CreateServicePayload,
+  image?: File | null,
+) => {
+  return request.postMultipart(
+    ENDPOINT.ADMIN_SERVICES,
+    payload as unknown as Record<string, unknown>,
+    { name: "image", file: image ?? null },
+  );
 };
 
 export interface ServiceItem {
@@ -20,6 +25,7 @@ export interface ServiceItem {
   description?: string;
   durationMinutes: number;
   price: number;
+  imageUrl?: string;
   active: boolean;
 }
 
@@ -52,17 +58,25 @@ export const searchServices = async ({
 };
 
 export interface UpdateServicePayload extends CreateServicePayload {
+  /** Clears the current image. Ignored when a new image file is sent. */
+  removeImage?: boolean;
   active?: boolean;
 }
 
+/**
+ * A full update. An optional image is sent in the same request and replaces the
+ * current one; the backend deletes the image it replaces.
+ */
 export const updateService = async (
   id: number,
   payload: UpdateServicePayload,
+  image?: File | null,
 ) => {
-  return request.put({
-    path: `${ENDPOINT.ADMIN_SERVICES}/${id}`,
-    body: payload as unknown as Record<string, unknown>,
-  });
+  return request.putMultipart(
+    `${ENDPOINT.ADMIN_SERVICES}/${id}`,
+    payload as unknown as Record<string, unknown>,
+    { name: "image", file: image ?? null },
+  );
 };
 
 /** Soft delete: the backend deactivates the service. */

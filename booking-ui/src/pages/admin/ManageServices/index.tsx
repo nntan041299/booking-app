@@ -257,22 +257,30 @@ const ManageServices = () => {
                           <div className="flex items-center gap-4">
                             <div
                               aria-hidden="true"
-                              className="w-[72px] h-[72px] rounded-xl flex-shrink-0 flex items-center justify-center"
+                              className="w-[72px] h-[72px] rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center"
                               style={{ background: color.bg, color: color.fg }}
                             >
-                              <svg
-                                width="28"
-                                height="28"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.6"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <path d="M12 21c-4.5-2-7-5.5-7-9.5C5 8 7.5 5 12 3c4.5 2 7 5 7 8.5 0 4-2.5 7.5-7 9.5z" />
-                                <path d="M12 8v13" />
-                              </svg>
+                              {service.imageUrl ? (
+                                <img
+                                  src={service.imageUrl}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <svg
+                                  width="28"
+                                  height="28"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.6"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M12 21c-4.5-2-7-5.5-7-9.5C5 8 7.5 5 12 3c4.5 2 7 5 7 8.5 0 4-2.5 7.5-7 9.5z" />
+                                  <path d="M12 8v13" />
+                                </svg>
+                              )}
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">

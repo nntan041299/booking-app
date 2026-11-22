@@ -9,6 +9,8 @@ import com.nntan041299.bookingservice.media.storage.StoredImage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -53,6 +55,36 @@ public class ImageUploadService {
         }
 
         return imageStorageService.upload(content, folderPrefix + "/" + folder.getPath());
+    }
+
+    /**
+     * Like {@link #upload}, for use inside a transaction: returns the URL of the stored image, or {@code null}
+     * when no file was sent. If the transaction rolls back, the uploaded image is removed again.
+     */
+    public String uploadInTransaction(MultipartFile file, ImageFolder folder) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+        StoredImage stored = upload(file, folder);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    deleteByUrl(stored.url());
+                }
+            }
+        });
+        return stored.url();
+    }
+
+    /** Removes the image behind a URL only once the surrounding transaction commits. */
+    public void deleteByUrlAfterCommit(String url) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                deleteByUrl(url);
+            }
+        });
     }
 
     /**

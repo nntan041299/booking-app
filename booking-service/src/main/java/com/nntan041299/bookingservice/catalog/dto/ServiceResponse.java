@@ -14,5 +14,6 @@ public class ServiceResponse {
     private String description;
     private int durationMinutes;
     private BigDecimal price;
+    private String imageUrl;
     private boolean active;
 }

@@ -31,6 +31,9 @@ public class ServiceOffering extends BaseEntity {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private boolean active = true;
