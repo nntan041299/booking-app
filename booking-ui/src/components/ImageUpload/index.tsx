@@ -1,4 +1,3 @@
-import { FaCamera } from "react-icons/fa";
 import { IMAGE_ACCEPT, MAX_IMAGE_BYTES } from "@/service/media";
 
 interface ImageUploadProps {
@@ -10,8 +9,6 @@ interface ImageUploadProps {
   /** The image to show, or null for none. */
   src: string | null;
   disabled?: boolean;
-  /** Show a camera icon over the image on hover and focus. */
-  hoverIcon?: boolean;
   onPick: (file: File) => void;
   onRemove: () => void;
   /** Called when the picked file is not an accepted image. */
@@ -35,7 +32,6 @@ export default function ImageUpload({
   name,
   src,
   disabled = false,
-  hoverIcon = false,
   onPick,
   onRemove,
   onError,
@@ -56,7 +52,7 @@ export default function ImageUpload({
       <div className="relative w-24 h-24">
         <label
           htmlFor={id}
-          className={`group relative flex items-center justify-center w-24 h-24 overflow-hidden rounded-full bg-spa-green-50 text-spa-green-800 text-3xl font-semibold focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-spa-green ${
+          className={`group/image relative flex items-center justify-center w-24 h-24 overflow-hidden rounded-full bg-spa-green-50 text-spa-green-800 text-3xl font-semibold focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-spa-green ${
             disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
           }`}
         >
@@ -66,9 +62,23 @@ export default function ImageUpload({
           ) : (
             <span aria-hidden="true">{getInitials(name)}</span>
           )}
-          {hoverIcon && !disabled && (
-            <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
-              <FaCamera aria-hidden="true" className="text-xl" />
+          {!disabled && (
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 flex items-center justify-center bg-black/45 text-white opacity-0 transition-opacity duration-150 group-hover/image:opacity-100 group-focus-within/image:opacity-100"
+            >
+              <svg
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+              </svg>
             </span>
           )}
           <input

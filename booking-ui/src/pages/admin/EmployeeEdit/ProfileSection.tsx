@@ -148,7 +148,6 @@ export default function ProfileSection({
           name={fullName}
           src={avatar.src}
           disabled={isPending}
-          hoverIcon
           onPick={(file) => {
             touch();
             avatar.pick(file);
