@@ -152,16 +152,6 @@ const ResourceEdit = ({ mode }: { mode: "create" | "edit" }) => {
             />
           </>
         )}
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link
-            to={LIST_PATH}
-            className="inline-flex items-center min-h-11 px-5 rounded-[10px] border border-spa-border-strong bg-white text-spa-ink font-medium no-underline hover:bg-spa-canvas
-                       focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green"
-          >
-            Back to resources
-          </Link>
-        </div>
       </div>
     </Layout>
   );
