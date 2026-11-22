@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import Field from "@/components/Field";
+import ImageUpload from "@/components/ImageUpload";
+import { useImageField } from "@/components/ImageUpload/useImageField";
 import Input from "@/components/Input";
 import Textarea from "@/components/Textarea";
 import { Section, SectionFooter } from "@/components/Section";
@@ -9,7 +11,6 @@ import {
   updateService,
   type ServiceItem,
 } from "@/service/catalog";
-import { IMAGE_ACCEPT, MAX_IMAGE_BYTES } from "@/service/media";
 import { getErrorMessage } from "@/rest";
 
 export type DetailsPatch = Pick<
@@ -45,30 +46,7 @@ export default function DetailsSection({
   const [formError, setFormError] = useState("");
 
   // A newly picked image is only sent with the rest of the form on save.
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imageUrl, setImageUrl] = useState(saved.imageUrl);
-  const previewUrl = useMemo(
-    () => (imageFile ? URL.createObjectURL(imageFile) : null),
-    [imageFile],
-  );
-  useEffect(
-    () => () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    },
-    [previewUrl],
-  );
-  // The saved image was cleared and no replacement was picked.
-  const removeImage = Boolean(saved.imageUrl) && !imageUrl && !imageFile;
-  const shownUrl = previewUrl ?? (imageUrl || null);
-  const initials =
-    name
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "?";
+  const image = useImageField(saved.imageUrl);
 
   const payload = () => ({
     name: name.trim(),
@@ -91,14 +69,14 @@ export default function DetailsSection({
           service.id,
           {
             ...payload(),
-            removeImage: removeImage || undefined,
+            removeImage: image.removed || undefined,
             active: service.active,
           },
-          imageFile,
+          image.file,
         );
         return res.data?.data as ServiceItem | undefined;
       }
-      const res = await createService(payload(), imageFile);
+      const res = await createService(payload(), image.file);
       return res.data?.data as ServiceItem | undefined;
     },
     onSuccess: (result) => {
@@ -108,8 +86,7 @@ export default function DetailsSection({
         const savedImageUrl = result?.imageUrl ?? "";
         setName(p.name);
         setDescription(p.description ?? "");
-        setImageUrl(savedImageUrl);
-        setImageFile(null);
+        image.commit(savedImageUrl);
         onSaved({
           name: p.name,
           description: p.description,
@@ -128,9 +105,8 @@ export default function DetailsSection({
       description !== saved.description ||
       duration !== saved.duration ||
       price !== saved.price ||
-      imageFile !== null ||
-      removeImage
-    : Boolean(name || description || duration || price || imageFile);
+      image.dirty
+    : Boolean(name || description || duration || price || image.dirty);
 
   const touch = () => {
     setFormError("");
@@ -142,26 +118,7 @@ export default function DetailsSection({
     setDescription(saved.description);
     setDuration(saved.duration);
     setPrice(saved.price);
-    setImageUrl(saved.imageUrl);
-    setImageFile(null);
-    touch();
-  };
-
-  const pickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // allow picking the same file again
-    if (!file) return;
-    if (!IMAGE_ACCEPT.split(",").includes(file.type))
-      return setFormError("Upload a PNG, JPG or WebP image");
-    if (file.size > MAX_IMAGE_BYTES)
-      return setFormError("Image must not exceed 5 MB");
-    touch();
-    setImageFile(file);
-  };
-
-  const clearImage = () => {
-    setImageFile(null);
-    setImageUrl("");
+    image.reset();
     touch();
   };
 
@@ -191,63 +148,23 @@ export default function DetailsSection({
       defaultOpen
     >
       <div className="flex flex-wrap gap-6">
-        <div className="flex flex-col items-center gap-2.5 w-30">
-          <div className="relative w-24 h-24">
-            <label
-              htmlFor="service-image"
-              className={`relative flex items-center justify-center w-24 h-24 overflow-hidden rounded-full bg-spa-green-50 text-spa-green-800 text-3xl font-semibold focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-spa-green ${
-                isPending ? "cursor-not-allowed opacity-60" : "cursor-pointer"
-              }`}
-            >
-              <span className="sr-only">
-                Service image. Click to upload or replace.
-              </span>
-              {shownUrl ? (
-                <img
-                  src={shownUrl}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span aria-hidden="true">{initials}</span>
-              )}
-              <input
-                id="service-image"
-                type="file"
-                accept={IMAGE_ACCEPT}
-                className="sr-only"
-                onChange={pickFile}
-                disabled={isPending}
-              />
-            </label>
-            {shownUrl && (
-              <button
-                type="button"
-                aria-label="Remove image"
-                disabled={isPending}
-                onClick={clearImage}
-                className="absolute -top-2 -right-2 w-11 h-11 p-0 border-0 bg-transparent flex items-center justify-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green rounded-full"
-              >
-                <span
-                  aria-hidden="true"
-                  className="w-7 h-7 rounded-full bg-spa-ink text-white flex items-center justify-center border-2 border-white shadow-[0_1px_4px_rgba(0,0,0,0.3)]"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.6"
-                    strokeLinecap="round"
-                  >
-                    <path d="M6 6l12 12M18 6L6 18" />
-                  </svg>
-                </span>
-              </button>
-            )}
-          </div>
-        </div>
+        <ImageUpload
+          id="service-image"
+          label="Service image"
+          name={name}
+          src={image.src}
+          disabled={isPending}
+          onPick={(file) => {
+            touch();
+            image.pick(file);
+          }}
+          onRemove={() => {
+            touch();
+            image.clear();
+          }}
+          onError={setFormError}
+        />
+
         <div className="flex-1 basis-90 min-w-0 flex flex-col gap-[18px]">
           <Field label="Name" htmlFor="name">
             <Input
