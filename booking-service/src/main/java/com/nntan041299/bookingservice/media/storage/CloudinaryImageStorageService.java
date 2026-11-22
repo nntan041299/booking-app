@@ -11,6 +11,9 @@ import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** {@link ImageStorageService} backed by Cloudinary. Active when {@code app.storage.provider=cloudinary}. */
 @Slf4j
@@ -18,12 +21,18 @@ import java.util.Map;
 @ConditionalOnProperty(name = "app.storage.provider", havingValue = "cloudinary", matchIfMissing = true)
 public class CloudinaryImageStorageService implements ImageStorageService {
 
+    /** {@code https://res.cloudinary.com/<cloud>/image/upload/[v123/]<public id>[.ext]} */
+    private static final Pattern DELIVERY_URL =
+            Pattern.compile("^https?://res\\.cloudinary\\.com/([^/]+)/image/upload/(?:v\\d+/)?(.+?)(?:\\.[A-Za-z0-9]+)?$");
+
     private final Cloudinary cloudinary;
+    private final String cloudName;
 
     public CloudinaryImageStorageService(
             @Value("${app.storage.cloudinary.cloud-name:}") String cloudName,
             @Value("${app.storage.cloudinary.api-key:}") String apiKey,
             @Value("${app.storage.cloudinary.api-secret:}") String apiSecret) {
+        this.cloudName = cloudName;
         if (StringUtils.hasText(cloudName) && StringUtils.hasText(apiKey) && StringUtils.hasText(apiSecret)) {
             this.cloudinary = new Cloudinary(ObjectUtils.asMap(
                     "cloud_name", cloudName,
@@ -63,6 +72,19 @@ public class CloudinaryImageStorageService implements ImageStorageService {
         } catch (IOException | RuntimeException e) {
             throw new ImageStorageException("Cloudinary delete failed for " + publicId, e);
         }
+    }
+
+    @Override
+    public Optional<String> publicIdFromUrl(String url) {
+        if (!StringUtils.hasText(url)) {
+            return Optional.empty();
+        }
+        Matcher m = DELIVERY_URL.matcher(url.trim());
+        // Only our own cloud: never delete something a URL merely looks like.
+        if (!m.matches() || !m.group(1).equals(cloudName)) {
+            return Optional.empty();
+        }
+        return Optional.of(m.group(2));
     }
 
     private Cloudinary requireClient() {

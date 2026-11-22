@@ -6,16 +6,20 @@ export interface CreateEmployeePayload {
   email: string;
   password: string;
   bio?: string;
-  avatarUrl?: string;
   workingHours?: WorkingHours[];
   serviceIds?: number[];
 }
 
-export const createEmployee = async (payload: CreateEmployeePayload) => {
-  return request.post({
-    path: ENDPOINT.ADMIN_EMPLOYEES,
-    body: payload as unknown as Record<string, unknown>,
-  });
+/** An optional avatar image is sent in the same request; it becomes the employee's avatar. */
+export const createEmployee = async (
+  payload: CreateEmployeePayload,
+  avatar?: File | null,
+) => {
+  return request.postMultipart(
+    ENDPOINT.ADMIN_EMPLOYEES,
+    payload as unknown as Record<string, unknown>,
+    { name: "avatar", file: avatar ?? null },
+  );
 };
 
 export interface WorkingHours {
@@ -78,7 +82,8 @@ export const searchEmployees = async ({
 export interface UpdateEmployeePayload {
   fullName?: string;
   bio?: string;
-  avatarUrl?: string;
+  /** Clears the current avatar. Ignored when a new avatar file is sent. */
+  removeAvatar?: boolean;
   active?: boolean;
   /** Replaces the whole weekly schedule when present. */
   workingHours?: WorkingHours[];
@@ -86,14 +91,20 @@ export interface UpdateEmployeePayload {
   serviceIds?: number[];
 }
 
+/**
+ * An optional avatar image is sent in the same request and becomes the employee's
+ * avatar; the backend deletes the image it replaces.
+ */
 export const updateEmployee = async (
   id: number,
   payload: UpdateEmployeePayload,
+  avatar?: File | null,
 ) => {
-  return request.patch({
-    path: `${ENDPOINT.ADMIN_EMPLOYEES}/${id}`,
-    body: payload as unknown as Record<string, unknown>,
-  });
+  return request.patchMultipart(
+    `${ENDPOINT.ADMIN_EMPLOYEES}/${id}`,
+    payload as unknown as Record<string, unknown>,
+    { name: "avatar", file: avatar ?? null },
+  );
 };
 
 /** Soft delete: the backend deactivates the employee and their login. */

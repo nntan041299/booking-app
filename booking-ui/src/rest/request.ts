@@ -139,6 +139,26 @@ axios.interceptors.response.use(
   },
 );
 
+/**
+ * Builds the multipart body the employee endpoints expect: the fields as a JSON
+ * part named "data", plus an optional file part.
+ */
+function toMultipart(
+  body: Record<string, unknown>,
+  file?: { name: string; file: File | null },
+): FormData {
+  const form = new FormData();
+  form.append(
+    "data",
+    new Blob([JSON.stringify(body)], { type: "application/json" }),
+  );
+  if (file?.file) form.append(file.name, file.file);
+  return form;
+}
+
+// Content-Type is unset so the browser adds the multipart boundary itself.
+const MULTIPART = { "Content-Type": undefined as unknown as string };
+
 export const request = {
   get: async ({
     path,
@@ -161,5 +181,25 @@ export const request = {
 
   delete: async ({ path, body, headers }: RequestParams) => {
     return await axios.delete(path, { headers, data: body });
+  },
+
+  postMultipart: async (
+    path: string,
+    body: Record<string, unknown>,
+    file?: { name: string; file: File | null },
+  ) => {
+    return await axios.post(path, toMultipart(body, file), {
+      headers: MULTIPART,
+    });
+  },
+
+  patchMultipart: async (
+    path: string,
+    body: Record<string, unknown>,
+    file?: { name: string; file: File | null },
+  ) => {
+    return await axios.patch(path, toMultipart(body, file), {
+      headers: MULTIPART,
+    });
   },
 };

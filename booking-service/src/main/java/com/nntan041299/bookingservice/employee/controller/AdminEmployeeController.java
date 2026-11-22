@@ -9,9 +9,11 @@ import com.nntan041299.bookingservice.employee.service.EmployeeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/admin/employees")
@@ -21,9 +23,12 @@ public class AdminEmployeeController {
 
     private final EmployeeService employeeService;
 
-    @PostMapping
-    public ResponseEntity<EmployeeResponse> create(@Valid @RequestBody CreateEmployeeRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.create(request));
+    /** Multipart: the employee fields as JSON in {@code data}, plus an optional {@code avatar} image file. */
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<EmployeeResponse> create(
+            @Valid @RequestPart("data") CreateEmployeeRequest request,
+            @RequestPart(value = "avatar", required = false) MultipartFile avatar) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.create(request, avatar));
     }
 
     /** Every filter is optional. Zero-based page; size is capped at 100. */
@@ -42,9 +47,15 @@ public class AdminEmployeeController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<EmployeeResponse> update(@PathVariable Long id,
-                                                   @Valid @RequestBody UpdateEmployeeRequest request) {
-        return ResponseEntity.ok(employeeService.update(id, request));
+    /**
+     * Multipart: the changed fields as JSON in {@code data}, plus an optional {@code avatar} image file.
+     * A new avatar replaces the current one (or {@code data.removeAvatar} clears it); the previous image is deleted.
+     */
+    @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<EmployeeResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestPart("data") UpdateEmployeeRequest request,
+            @RequestPart(value = "avatar", required = false) MultipartFile avatar) {
+        return ResponseEntity.ok(employeeService.update(id, request, avatar));
     }
 }

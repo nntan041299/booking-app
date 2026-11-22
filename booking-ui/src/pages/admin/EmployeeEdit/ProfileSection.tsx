@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { FaCamera, FaTimes } from "react-icons/fa";
 import Field from "@/components/Field";
 import Input from "@/components/Input";
 import PasswordInput from "@/components/PasswordInput";
@@ -9,6 +10,7 @@ import {
   updateEmployee,
   type EmployeeItem,
 } from "@/service/employee";
+import { IMAGE_ACCEPT, MAX_IMAGE_BYTES } from "@/service/media";
 import { getErrorMessage } from "@/rest";
 import { Section, SectionFooter } from "@/components/Section";
 
@@ -43,6 +45,20 @@ export default function ProfileSection({
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState("");
 
+  // A newly picked image is only sent with the rest of the form on save.
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const previewUrl = useMemo(
+    () => (avatarFile ? URL.createObjectURL(avatarFile) : null),
+    [avatarFile],
+  );
+  useEffect(
+    () => () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    },
+    [previewUrl],
+  );
+
   const {
     mutate: save,
     isPending,
@@ -52,53 +68,79 @@ export default function ProfileSection({
   } = useMutation({
     mutationFn: async () => {
       if (isEdit) {
-        await updateEmployee(employee.id, {
-          fullName: fullName.trim(),
-          bio: bio.trim(),
-          avatarUrl: avatarUrl.trim(),
-        });
-        return undefined;
+        const res = await updateEmployee(
+          employee.id,
+          {
+            fullName: fullName.trim(),
+            bio: bio.trim(),
+            removeAvatar: removeAvatar || undefined,
+          },
+          avatarFile,
+        );
+        return res.data?.data as EmployeeItem | undefined;
       }
-      const res = await createEmployee({
-        fullName: fullName.trim(),
-        username: username.trim(),
-        email: email.trim(),
-        password,
-        bio: bio.trim() || undefined,
-        avatarUrl: avatarUrl.trim() || undefined,
-      });
+      const res = await createEmployee(
+        {
+          fullName: fullName.trim(),
+          username: username.trim(),
+          email: email.trim(),
+          password,
+          bio: bio.trim() || undefined,
+        },
+        avatarFile,
+      );
       return res.data?.data as EmployeeItem | undefined;
     },
-    onSuccess: (created) => {
+    onSuccess: (result) => {
       if (isEdit) {
+        // With a new image the backend decides the final URL.
+        const savedAvatarUrl = result?.avatarUrl ?? "";
         setFullName(fullName.trim());
-        setAvatarUrl(avatarUrl.trim());
+        setAvatarUrl(savedAvatarUrl);
+        setAvatarFile(null);
         setBio(bio.trim());
         onSaved({
           fullName: fullName.trim(),
           bio: bio.trim(),
-          avatarUrl: avatarUrl.trim(),
+          avatarUrl: savedAvatarUrl,
         });
       } else {
-        onCreated(created);
+        onCreated(result);
       }
     },
   });
 
+  // The current photo was cleared and no replacement was picked.
+  const removeAvatar = Boolean(saved.avatarUrl) && !avatarUrl && !avatarFile;
+
   const dirty = isEdit
     ? fullName !== saved.fullName ||
       avatarUrl !== saved.avatarUrl ||
+      avatarFile !== null ||
       bio !== saved.bio
-    : Boolean(fullName || avatarUrl || bio || username || email || password);
+    : Boolean(fullName || avatarFile || bio || username || email || password);
 
   const touch = () => {
     setFormError("");
     if (isError) reset();
   };
 
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow picking the same file again
+    if (!file) return;
+    if (!IMAGE_ACCEPT.split(",").includes(file.type))
+      return setFormError("Upload a PNG, JPG or WebP image");
+    if (file.size > MAX_IMAGE_BYTES)
+      return setFormError("Image must not exceed 5 MB");
+    touch();
+    setAvatarFile(file);
+  };
+
   const discard = () => {
     setFullName(saved.fullName);
     setAvatarUrl(saved.avatarUrl);
+    setAvatarFile(null);
     setBio(saved.bio);
     setUsername("");
     setEmail("");
@@ -119,8 +161,6 @@ export default function ProfileSection({
       if (password.length < 8)
         return setFormError("Password must be at least 8 characters");
     }
-    if (avatarUrl.length > 255)
-      return setFormError("Avatar URL must not exceed 255 characters");
     setFormError("");
     save();
   };
@@ -145,23 +185,52 @@ export default function ProfileSection({
     >
       <div className="flex flex-wrap gap-6">
         <div className="flex flex-col items-center gap-2.5 w-30">
-          <div
-            aria-hidden="true"
-            className="w-24 h-24 rounded-full overflow-hidden bg-spa-green-50 text-spa-green-800 flex items-center justify-center text-3xl font-semibold"
-          >
-            {avatarUrl.trim() ? (
-              <img
-                src={avatarUrl.trim()}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              initials
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Change photo"
+              title="Click to change photo"
+              disabled={isPending}
+              onClick={() => fileInput.current?.click()}
+              className="group relative w-24 h-24 rounded-full overflow-hidden bg-spa-green-50 text-spa-green-800 flex items-center justify-center text-3xl font-semibold cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {previewUrl || avatarUrl.trim() ? (
+                <img
+                  src={previewUrl ?? avatarUrl.trim()}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                initials
+              )}
+              <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+                <FaCamera aria-hidden="true" className="text-xl" />
+              </span>
+            </button>
+            {(avatarUrl || avatarFile) && (
+              <button
+                type="button"
+                aria-label="Remove photo"
+                title="Remove photo"
+                disabled={isPending}
+                onClick={() => {
+                  setAvatarUrl("");
+                  setAvatarFile(null);
+                  touch();
+                }}
+                className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-white border border-spa-border-strong text-spa-muted shadow-sm flex items-center justify-center cursor-pointer hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <FaTimes aria-hidden="true" className="text-xs" />
+              </button>
             )}
           </div>
-          <span className="text-[12.5px] text-spa-muted text-center">
-            Avatar preview
-          </span>
+          <input
+            ref={fileInput}
+            type="file"
+            accept={IMAGE_ACCEPT}
+            className="hidden"
+            onChange={handleFile}
+          />
         </div>
 
         <div className="flex-1 basis-90 min-w-0 flex flex-col gap-[18px]">
@@ -224,20 +293,6 @@ export default function ProfileSection({
               </Field>
             </>
           )}
-
-          <Field label="Avatar URL" htmlFor="avatarUrl">
-            <Input
-              id="avatarUrl"
-              type="url"
-              placeholder="https://example.com/photo.jpg"
-              value={avatarUrl}
-              onChange={(e) => {
-                setAvatarUrl(e.target.value);
-                touch();
-              }}
-              disabled={isPending}
-            />
-          </Field>
 
           <Field
             label="Bio"

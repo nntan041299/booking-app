@@ -35,9 +35,6 @@ public class CreateEmployeeRequest {
 
     private String bio;
 
-    @Size(max = 255, message = "Avatar URL must not exceed 255 characters")
-    private String avatarUrl;
-
     /** Optional weekly schedule; omit or leave empty for none. */
     @Valid
     private List<WorkingHoursRequest> workingHours;

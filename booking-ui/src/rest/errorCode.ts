@@ -30,6 +30,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
   "00024": "That time slot is already booked",
   "00025": "Resource name already exists",
   "00026": "Resource not found",
+  "00027": "Upload a PNG, JPG or WebP image up to 5 MB",
+  "00028": "The image could not be uploaded, try again later",
 };
 
 interface ApiErrorBody {

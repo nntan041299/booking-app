@@ -16,6 +16,9 @@ import com.nntan041299.bookingservice.employee.entity.EmployeeWorkingHours;
 import com.nntan041299.bookingservice.employee.mapper.EmployeeMapper;
 import com.nntan041299.bookingservice.employee.repository.EmployeeRepository;
 import com.nntan041299.bookingservice.employee.repository.EmployeeSpecifications;
+import com.nntan041299.bookingservice.media.dto.ImageFolder;
+import com.nntan041299.bookingservice.media.service.ImageUploadService;
+import com.nntan041299.bookingservice.media.storage.StoredImage;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +27,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Comparator;
 import java.util.List;
@@ -40,9 +46,10 @@ public class EmployeeService {
     private final PasswordEncoder passwordEncoder;
     private final EmployeeMapper employeeMapper;
     private final ServiceRepository serviceRepository;
+    private final ImageUploadService imageUploadService;
 
     @Transactional
-    public EmployeeResponse create(CreateEmployeeRequest request) {
+    public EmployeeResponse create(CreateEmployeeRequest request, MultipartFile avatar) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException(ErrorCode.USERNAME_ALREADY_EXISTS.name());
         }
@@ -57,6 +64,8 @@ public class EmployeeService {
             validateServices(request.getServiceIds());
         }
 
+        String avatarUrl = uploadAvatar(avatar);
+
         User user = userRepository.save(User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
@@ -70,7 +79,7 @@ public class EmployeeService {
                 .userId(user.getId())
                 .fullName(request.getFullName().trim())
                 .bio(request.getBio())
-                .avatarUrl(request.getAvatarUrl())
+                .avatarUrl(avatarUrl)
                 .build();
         if (request.getWorkingHours() != null) {
             replaceWorkingHours(employee, request.getWorkingHours());
@@ -99,11 +108,11 @@ public class EmployeeService {
      */
     @Transactional
     public void remove(Long id) {
-        update(id, new UpdateEmployeeRequest(null, null, null, false, null, null));
+        update(id, new UpdateEmployeeRequest(null, null, null, false, null, null), null);
     }
 
     @Transactional
-    public EmployeeResponse update(Long id, UpdateEmployeeRequest request) {
+    public EmployeeResponse update(Long id, UpdateEmployeeRequest request, MultipartFile avatar) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(ErrorCode.EMPLOYEE_NOT_FOUND.name()));
 
@@ -113,8 +122,14 @@ public class EmployeeService {
         if (request.getBio() != null) {
             employee.setBio(request.getBio());
         }
-        if (request.getAvatarUrl() != null) {
-            employee.setAvatarUrl(request.getAvatarUrl());
+        String newAvatarUrl = uploadAvatar(avatar);
+        boolean clearAvatar = newAvatarUrl == null && Boolean.TRUE.equals(request.getRemoveAvatar());
+        if (newAvatarUrl != null || clearAvatar) {
+            String oldAvatarUrl = employee.getAvatarUrl();
+            employee.setAvatarUrl(newAvatarUrl);
+            if (oldAvatarUrl != null) {
+                deleteImageAfterCommit(oldAvatarUrl);
+            }
         }
         if (request.getActive() != null) {
             employee.setActive(request.getActive());
@@ -130,6 +145,36 @@ public class EmployeeService {
         syncLinkedUser(employee, request);
 
         return employeeMapper.toResponse(employeeRepository.save(employee));
+    }
+
+    /**
+     * Uploads the avatar and returns its URL, or {@code null} when no file was sent. If the surrounding
+     * transaction rolls back, the uploaded image is removed again.
+     */
+    private String uploadAvatar(MultipartFile avatar) {
+        if (avatar == null || avatar.isEmpty()) {
+            return null;
+        }
+        StoredImage stored = imageUploadService.upload(avatar, ImageFolder.EMPLOYEES);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    imageUploadService.deleteByUrl(stored.url());
+                }
+            }
+        });
+        return stored.url();
+    }
+
+    /** Cleans up a replaced image only once the change is saved, so a rolled-back update keeps its image. */
+    private void deleteImageAfterCommit(String url) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                imageUploadService.deleteByUrl(url);
+            }
+        });
     }
 
     /** Keeps the login account's display name and enabled flag consistent with the employee profile. */

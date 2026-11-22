@@ -1,5 +1,7 @@
 package com.nntan041299.bookingservice.media.storage;
 
+import java.util.Optional;
+
 /**
  * Where uploaded images are kept. The rest of the application only depends on this
  * interface, so the hosting provider can be replaced by writing another implementation
@@ -22,4 +24,10 @@ public interface ImageStorageService {
 
     /** Deletes a stored image by its {@link StoredImage#publicId()}. Deleting a missing image is not an error. */
     void delete(String publicId);
+
+    /**
+     * Works out the {@link StoredImage#publicId()} from a URL this provider handed out, so an image can be
+     * deleted when only its URL was saved. Empty for any other URL (e.g. one pasted from elsewhere).
+     */
+    Optional<String> publicIdFromUrl(String url);
 }

@@ -1,10 +1,12 @@
 package com.nntan041299.bookingservice.media.service;
 
 import com.nntan041299.bookingservice.common.exception.ErrorCode;
+import com.nntan041299.bookingservice.common.exception.ImageStorageException;
 import com.nntan041299.bookingservice.common.util.ImageUtils;
 import com.nntan041299.bookingservice.media.dto.ImageFolder;
 import com.nntan041299.bookingservice.media.storage.ImageStorageService;
 import com.nntan041299.bookingservice.media.storage.StoredImage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,6 +19,7 @@ import java.io.UncheckedIOException;
  * {@link ImageStorageService}. Validation lives here, not in the storage providers, so it
  * stays the same whichever provider is used.
  */
+@Slf4j
 @Service
 public class ImageUploadService {
 
@@ -50,6 +53,20 @@ public class ImageUploadService {
         }
 
         return imageStorageService.upload(content, folderPrefix + "/" + folder.getPath());
+    }
+
+    /**
+     * Removes the image behind a URL we handed out earlier. Best effort: URLs from elsewhere are ignored and a
+     * storage failure is only logged, so replacing an image never fails because the old one could not be cleaned up.
+     */
+    public void deleteByUrl(String url) {
+        imageStorageService.publicIdFromUrl(url).ifPresent(publicId -> {
+            try {
+                imageStorageService.delete(publicId);
+            } catch (ImageStorageException e) {
+                log.warn("Could not delete old image {}", publicId, e);
+            }
+        });
     }
 
     /** Removes a previously stored image, e.g. when it is replaced. */
