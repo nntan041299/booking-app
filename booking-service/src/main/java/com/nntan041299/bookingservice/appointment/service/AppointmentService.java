@@ -58,6 +58,8 @@ public class AppointmentService {
                 .customerId(currentUserProvider.getCurrentUser().getId())
                 .employeeId(employee.getId())
                 .serviceId(service.getId())
+                .serviceName(service.getName())
+                .durationMinutes(service.getDurationMinutes())
                 .startAt(start)
                 .endAt(end)
                 .price(service.getPrice())
@@ -65,7 +67,8 @@ public class AppointmentService {
                 .build());
 
         return new AppointmentResponse(appointment.getId(), appointment.getCustomerId(),
-                employee.getId(), employee.getFullName(), service.getId(), service.getName(),
+                employee.getId(), employee.getFullName(), service.getId(),
+                appointment.getServiceName(), appointment.getDurationMinutes(),
                 appointment.getStartAt(), appointment.getEndAt(), appointment.getPrice(),
                 appointment.isPaid(), appointment.getNote());
     }

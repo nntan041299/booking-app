@@ -16,6 +16,7 @@ public class AppointmentResponse {
     private String employeeName;
     private Long serviceId;
     private String serviceName;
+    private int durationMinutes;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
     private BigDecimal price;
