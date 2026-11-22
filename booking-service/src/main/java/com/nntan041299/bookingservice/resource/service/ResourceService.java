@@ -3,6 +3,8 @@ package com.nntan041299.bookingservice.resource.service;
 import com.nntan041299.bookingservice.catalog.repository.ServiceRepository;
 import com.nntan041299.bookingservice.common.dto.PageResponse;
 import com.nntan041299.bookingservice.common.exception.ErrorCode;
+import com.nntan041299.bookingservice.media.dto.ImageFolder;
+import com.nntan041299.bookingservice.media.service.ImageUploadService;
 import com.nntan041299.bookingservice.resource.dto.CreateResourceRequest;
 import com.nntan041299.bookingservice.resource.dto.ResourceResponse;
 import com.nntan041299.bookingservice.resource.dto.ResourceSearchCriteria;
@@ -18,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Set;
 
@@ -30,9 +33,10 @@ public class ResourceService {
     private final ResourceRepository resourceRepository;
     private final ServiceRepository serviceRepository;
     private final ResourceMapper resourceMapper;
+    private final ImageUploadService imageUploadService;
 
     @Transactional
-    public ResourceResponse create(CreateResourceRequest request) {
+    public ResourceResponse create(CreateResourceRequest request, MultipartFile image) {
         String name = request.getName().trim();
         if (resourceRepository.existsByNameIgnoreCase(name)) {
             throw new IllegalArgumentException(ErrorCode.RESOURCE_NAME_ALREADY_EXISTS.name());
@@ -42,7 +46,7 @@ public class ResourceService {
                 .name(name)
                 .type(request.getType())
                 .description(request.getDescription())
-                .imageUrl(request.getImageUrl())
+                .imageUrl(imageUploadService.uploadInTransaction(image, ImageFolder.RESOURCES))
                 .build();
         if (request.getServiceIds() != null) {
             replaceServices(resource, request.getServiceIds());
@@ -68,7 +72,7 @@ public class ResourceService {
     }
 
     @Transactional
-    public ResourceResponse update(Long id, UpdateResourceRequest request) {
+    public ResourceResponse update(Long id, UpdateResourceRequest request, MultipartFile image) {
         BookingResource resource = find(id);
 
         String name = request.getName().trim();
@@ -79,7 +83,14 @@ public class ResourceService {
         resource.setName(name);
         resource.setType(request.getType());
         resource.setDescription(request.getDescription());
-        resource.setImageUrl(request.getImageUrl());
+        String newImageUrl = imageUploadService.uploadInTransaction(image, ImageFolder.RESOURCES);
+        if (newImageUrl != null || Boolean.TRUE.equals(request.getRemoveImage())) {
+            String oldImageUrl = resource.getImageUrl();
+            resource.setImageUrl(newImageUrl);
+            if (oldImageUrl != null) {
+                imageUploadService.deleteByUrlAfterCommit(oldImageUrl);
+            }
+        }
         if (request.getActive() != null) {
             resource.setActive(request.getActive());
         }

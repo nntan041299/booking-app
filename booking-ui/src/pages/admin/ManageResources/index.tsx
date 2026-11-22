@@ -106,7 +106,6 @@ const ManageResources = () => {
         name: resource.name,
         type: resource.type,
         description: resource.description,
-        imageUrl: resource.imageUrl,
         active: !resource.active,
       }),
     onSuccess: () =>
@@ -267,7 +266,7 @@ const ManageResources = () => {
                           <div className="flex items-center gap-4">
                             <div
                               aria-hidden="true"
-                              className="w-[72px] h-[72px] rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center"
+                              className="w-[72px] h-[72px] rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center"
                               style={{ background: color.bg, color: color.fg }}
                             >
                               {resource.imageUrl ? (

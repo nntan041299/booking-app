@@ -33,7 +33,6 @@ export default function ServicesSection({
         name: resource.name,
         type: resource.type,
         description: resource.description,
-        imageUrl: resource.imageUrl,
         serviceIds: selected,
       }),
     onSuccess: onSaved,

@@ -24,9 +24,6 @@ public class CreateResourceRequest {
 
     private String description;
 
-    @Size(max = 255, message = "Image URL must not exceed 255 characters")
-    private String imageUrl;
-
     /** The services that can use this resource. Optional; empty means none. */
     private Set<Long> serviceIds;
 }

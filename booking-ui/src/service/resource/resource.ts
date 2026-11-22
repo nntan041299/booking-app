@@ -62,32 +62,42 @@ export interface CreateResourcePayload {
   name: string;
   type: ResourceType;
   description?: string;
-  imageUrl?: string;
   serviceIds?: number[];
 }
 
+/** An optional image is sent in the same request and becomes the resource image. */
 export const createResource = async (
   payload: CreateResourcePayload,
+  image?: File | null,
 ): Promise<ResourceItem> => {
-  const res = await request.post({
-    path: ENDPOINT.ADMIN_RESOURCES,
-    body: payload as unknown as Record<string, unknown>,
-  });
+  const res = await request.postMultipart(
+    ENDPOINT.ADMIN_RESOURCES,
+    payload as unknown as Record<string, unknown>,
+    { name: "image", file: image ?? null },
+  );
   return res.data.data;
 };
 
 /** Full update of the editable fields; `active` and `serviceIds` are left unchanged when omitted. */
 export interface UpdateResourcePayload extends CreateResourcePayload {
+  /** Clears the current image. Ignored when a new image file is sent. */
+  removeImage?: boolean;
   active?: boolean;
 }
 
+/**
+ * An optional image is sent in the same request and replaces the current one;
+ * the image is left unchanged when neither a file nor `removeImage` is sent.
+ */
 export const updateResource = async (
   id: number,
   payload: UpdateResourcePayload,
+  image?: File | null,
 ): Promise<ResourceItem> => {
-  const res = await request.put({
-    path: `${ENDPOINT.ADMIN_RESOURCES}/${id}`,
-    body: payload as unknown as Record<string, unknown>,
-  });
+  const res = await request.putMultipart(
+    `${ENDPOINT.ADMIN_RESOURCES}/${id}`,
+    payload as unknown as Record<string, unknown>,
+    { name: "image", file: image ?? null },
+  );
   return res.data.data;
 };

@@ -48,10 +48,11 @@ export default function DetailsSection({
   const [description, setDescription] = useState(saved.description);
   const [imageUrl, setImageUrl] = useState(saved.imageUrl);
   const [formError, setFormError] = useState("");
-  // UI only for now: the picked file is previewed in the browser but not uploaded or saved.
+  // A newly picked file is previewed here and sent with the rest of the form on save.
   const [picked, setPicked] = useState<{
     name: string;
     previewUrl: string;
+    file: File;
   } | null>(null);
   const [fileError, setFileError] = useState("");
 
@@ -76,17 +77,22 @@ export default function DetailsSection({
         name: name.trim(),
         type,
         description: description.trim() || undefined,
-        imageUrl: imageUrl.trim() || undefined,
       };
       return isEdit
-        ? updateResource(resource.id, payload)
-        : createResource(payload);
+        ? updateResource(
+            resource.id,
+            { ...payload, removeImage: removeImage || undefined },
+            picked?.file,
+          )
+        : createResource(payload, picked?.file);
     },
     onSuccess: (result) => {
       if (isEdit) {
         setName(name.trim());
         setDescription(description.trim());
-        setImageUrl(imageUrl.trim());
+        // With a new image the backend decides the final URL.
+        setImageUrl(result.imageUrl ?? "");
+        setPicked(null);
         onSaved(result);
       } else {
         onCreated(result);
@@ -94,12 +100,16 @@ export default function DetailsSection({
     },
   });
 
+  // The saved image was cleared and no replacement was picked.
+  const removeImage = Boolean(saved.imageUrl) && !imageUrl && !picked;
+
   const dirty = isEdit
     ? name !== saved.name ||
       type !== saved.type ||
       description !== saved.description ||
-      imageUrl !== saved.imageUrl
-    : Boolean(name || description || imageUrl || type !== saved.type);
+      picked !== null ||
+      removeImage
+    : Boolean(name || description || picked || type !== saved.type);
 
   const touch = () => {
     setFormError("");
@@ -127,7 +137,11 @@ export default function DetailsSection({
       return setFileError("The image must be 5 MB or smaller.");
     }
     setFileError("");
-    setPicked({ name: file.name, previewUrl: URL.createObjectURL(file) });
+    setPicked({
+      name: file.name,
+      previewUrl: URL.createObjectURL(file),
+      file,
+    });
   };
 
   const removeFile = () => {
@@ -141,15 +155,21 @@ export default function DetailsSection({
     if (!name.trim()) return setFormError("Name is required");
     if (name.trim().length > 100)
       return setFormError("Name must not exceed 100 characters");
-    if (imageUrl.trim().length > 255)
-      return setFormError("Image URL must not exceed 255 characters");
     setFormError("");
     save();
   };
 
   const previewUrl = picked?.previewUrl ?? imageUrl.trim();
   const hasImage = Boolean(picked || imageUrl.trim());
-  const fileName = picked?.name ?? (imageUrl.split("/").pop() || "");
+  const initials =
+    name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "?";
 
   return (
     <Section
@@ -159,176 +179,124 @@ export default function DetailsSection({
       badge={saved.name || undefined}
       defaultOpen
     >
-      <div className="flex flex-col gap-2">
-        <div className="text-sm font-medium">Resource image</div>
-        <div className="flex flex-wrap items-stretch gap-5">
-          <div
-            role="img"
-            aria-label="Resource image preview"
-            className="w-40 h-30 rounded-xl flex-none overflow-hidden bg-spa-green-50 text-spa-green-800 flex flex-col items-center justify-center gap-1.5 text-[12.5px] font-medium"
-          >
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <>
-                <svg
-                  aria-hidden="true"
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 9l9-5 9 5-9 5-9-5z" />
-                  <path d="M3 14l9 5 9-5" />
-                </svg>
-                Image preview
-              </>
-            )}
-          </div>
-
-          <div className="flex-1 basis-75 min-w-0 min-h-30 flex flex-col justify-center gap-2">
-            {!hasImage ? (
-              <label
-                htmlFor="image-upload"
-                className="relative flex flex-col items-center justify-center gap-1.5 flex-1 min-h-30 p-4 box-border text-center cursor-pointer
-                           border-[1.5px] border-dashed border-spa-dashed rounded-xl bg-[#F8FAF9] text-spa-green-800
-                           hover:bg-spa-green-50 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-spa-green"
-              >
-                <svg
-                  aria-hidden="true"
-                  width="26"
-                  height="26"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
-                </svg>
-                <span className="text-[15px] font-semibold">Upload image</span>
-                <span className="text-[13px] text-spa-muted">
-                  PNG, JPG or WebP, up to 5 MB. Landscape photo, at least 800 px
-                  wide.
-                </span>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={pickFile}
-                  disabled={isPending}
-                  className="absolute w-px h-px opacity-0 overflow-hidden"
+      <div className="flex flex-wrap gap-6">
+        <div className="flex flex-col items-center gap-2.5 w-30">
+          <div className="relative w-24 h-24">
+            <label
+              htmlFor="resource-image"
+              className={`relative flex items-center justify-center w-24 h-24 overflow-hidden rounded-full bg-spa-green-50 text-spa-green-800 text-3xl font-semibold focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-spa-green ${
+                isPending ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+              }`}
+            >
+              <span className="sr-only">
+                Resource image. Click to upload or replace.
+              </span>
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
                 />
-              </label>
-            ) : (
-              <div className="flex flex-wrap items-center gap-3 px-3.5 py-3 border border-spa-line rounded-xl bg-white">
-                <span
-                  className="flex-1 basis-40 min-w-0 text-sm font-semibold truncate"
-                  title={fileName}
-                >
-                  {fileName}
-                </span>
-                <label
-                  htmlFor="image-replace"
-                  className="relative inline-flex items-center min-h-11 px-4 box-border rounded-[10px] border border-spa-border-strong text-sm font-medium cursor-pointer
-                             hover:bg-spa-canvas focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-spa-green"
-                >
-                  Replace
-                  <input
-                    id="image-replace"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={pickFile}
-                    disabled={isPending}
-                    className="absolute w-px h-px opacity-0 overflow-hidden"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={removeFile}
-                  disabled={isPending}
-                  className="min-h-11 px-4 rounded-[10px] border border-spa-danger-line bg-white text-spa-danger text-sm font-medium cursor-pointer hover:bg-red-50
-                             focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green
-                             disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-            {fileError && (
-              <p
-                role="alert"
-                className="m-0 text-[13px] font-medium text-spa-danger"
+              ) : (
+                <span aria-hidden="true">{initials}</span>
+              )}
+              <input
+                id="resource-image"
+                type="file"
+                accept={IMAGE_TYPES.join(",")}
+                className="sr-only"
+                onChange={pickFile}
+                disabled={isPending}
+              />
+            </label>
+            {hasImage && (
+              <button
+                type="button"
+                aria-label="Remove image"
+                disabled={isPending}
+                onClick={removeFile}
+                className="absolute -top-2 -right-2 w-11 h-11 p-0 border-0 bg-transparent flex items-center justify-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green rounded-full"
               >
-                {fileError}
-              </p>
+                <span
+                  aria-hidden="true"
+                  className="w-7 h-7 rounded-full bg-spa-ink text-white flex items-center justify-center border-2 border-white shadow-[0_1px_4px_rgba(0,0,0,0.3)]"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                  >
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </span>
+              </button>
             )}
           </div>
         </div>
-      </div>
+        <div className="flex-1 basis-90 min-w-0 flex flex-col gap-[18px]">
+          <Field label="Name" htmlFor="name">
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                touch();
+              }}
+              disabled={isPending}
+            />
+          </Field>
 
-      <Field label="Name" htmlFor="name">
-        <Input
-          id="name"
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            touch();
-          }}
-          disabled={isPending}
-        />
-      </Field>
+          <Field
+            label="Description"
+            htmlFor="description"
+            hint="Shown to guests when they choose a resource."
+          >
+            <Textarea
+              id="description"
+              rows={4}
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                touch();
+              }}
+              disabled={isPending}
+              className="resize-y"
+            />
+          </Field>
 
-      <Field
-        label="Description"
-        htmlFor="description"
-        hint="Shown to guests when they choose a resource."
-      >
-        <Textarea
-          id="description"
-          rows={4}
-          value={description}
-          onChange={(e) => {
-            setDescription(e.target.value);
-            touch();
-          }}
-          disabled={isPending}
-          className="resize-y"
-        />
-      </Field>
-
-      <div className="flex flex-wrap gap-5">
-        <div className="flex-[1_1_200px] min-w-0 flex flex-col gap-1.5">
-          <span id="type-label" className="text-sm font-medium">
-            Type
-          </span>
-          <Dropdown
-            id="type"
-            labelId="type-label"
-            value={type}
-            options={TYPE_OPTIONS}
-            onChange={(v) => {
-              setType(v as ResourceType);
-              touch();
-            }}
-            disabled={isPending}
-          />
+          <div className="flex flex-wrap gap-5">
+            <div className="flex-[1_1_200px] min-w-0 flex flex-col gap-1.5">
+              <span id="type-label" className="text-sm font-medium">
+                Type
+              </span>
+              <Dropdown
+                id="type"
+                labelId="type-label"
+                value={type}
+                options={TYPE_OPTIONS}
+                onChange={(v) => {
+                  setType(v as ResourceType);
+                  touch();
+                }}
+                disabled={isPending}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
       <SectionFooter
         dirty={dirty}
         saving={isPending}
-        error={formError || (isError ? getErrorMessage(error) : undefined)}
+        error={
+          formError ||
+          fileError ||
+          (isError ? getErrorMessage(error) : undefined)
+        }
         saveLabel={isEdit ? "Save details" : "Create resource"}
         onDiscard={discard}
         onSave={handleSave}

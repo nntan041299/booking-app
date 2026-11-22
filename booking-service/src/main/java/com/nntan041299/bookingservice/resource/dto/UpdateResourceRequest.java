@@ -28,8 +28,8 @@ public class UpdateResourceRequest {
 
     private String description;
 
-    @Size(max = 255, message = "Image URL must not exceed 255 characters")
-    private String imageUrl;
+    /** {@code true} clears the current image. Ignored when a new image file is sent. */
+    private Boolean removeImage;
 
     private Boolean active;
 

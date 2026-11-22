@@ -9,9 +9,11 @@ import com.nntan041299.bookingservice.resource.service.ResourceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/admin/resources")
@@ -21,9 +23,12 @@ public class AdminResourceController {
 
     private final ResourceService resourceService;
 
-    @PostMapping
-    public ResponseEntity<ResourceResponse> create(@Valid @RequestBody CreateResourceRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(resourceService.create(request));
+    /** Multipart: the resource fields as JSON in {@code data}, plus an optional {@code image} file. */
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResourceResponse> create(
+            @Valid @RequestPart("data") CreateResourceRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(resourceService.create(request, image));
     }
 
     /** Every filter is optional. Zero-based page; size is capped at 100. */
@@ -40,10 +45,16 @@ public class AdminResourceController {
         return ResponseEntity.ok(resourceService.get(id));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ResourceResponse> update(@PathVariable Long id,
-                                                   @Valid @RequestBody UpdateResourceRequest request) {
-        return ResponseEntity.ok(resourceService.update(id, request));
+    /**
+     * Multipart: the fields as JSON in {@code data}, plus an optional {@code image} file. A new image replaces
+     * the current one (or {@code data.removeImage} clears it); the previous image is deleted.
+     */
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResourceResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestPart("data") UpdateResourceRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        return ResponseEntity.ok(resourceService.update(id, request, image));
     }
 
     /** Soft delete: deactivates the resource so history stays intact. */

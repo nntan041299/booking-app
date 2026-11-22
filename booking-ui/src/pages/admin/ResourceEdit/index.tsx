@@ -59,7 +59,6 @@ const ResourceEdit = ({ mode }: { mode: "create" | "edit" }) => {
         name: resource!.name,
         type: resource!.type,
         description: resource!.description,
-        imageUrl: resource!.imageUrl,
         active: true,
       }),
     onSuccess: handleUpdated,
