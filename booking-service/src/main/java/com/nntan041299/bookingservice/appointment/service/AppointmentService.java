@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -66,11 +69,30 @@ public class AppointmentService {
                 .note(request.getNote())
                 .build());
 
+        return toResponse(appointment, employee.getFullName());
+    }
+
+    /** The current customer's appointments, latest first. */
+    @Transactional(readOnly = true)
+    public List<AppointmentResponse> listMine() {
+        List<Appointment> appointments = appointmentRepository
+                .findByCustomerIdOrderByStartAtDesc(currentUserProvider.getCurrentUser().getId());
+        Map<Long, String> employeeNames = employeeRepository
+                .findAllById(appointments.stream().map(Appointment::getEmployeeId).collect(Collectors.toSet()))
+                .stream()
+                .collect(Collectors.toMap(Employee::getId, Employee::getFullName));
+        return appointments.stream()
+                .map(a -> toResponse(a, employeeNames.getOrDefault(a.getEmployeeId(), "")))
+                .toList();
+    }
+
+    private AppointmentResponse toResponse(Appointment appointment, String employeeName) {
+        String status = appointment.getEndAt().isAfter(LocalDateTime.now()) ? "UPCOMING" : "COMPLETED";
         return new AppointmentResponse(appointment.getId(), appointment.getCustomerId(),
-                employee.getId(), employee.getFullName(), service.getId(),
+                appointment.getEmployeeId(), employeeName, appointment.getServiceId(),
                 appointment.getServiceName(), appointment.getDurationMinutes(),
                 appointment.getStartAt(), appointment.getEndAt(), appointment.getPrice(),
-                appointment.isPaid(), appointment.getNote());
+                appointment.isPaid(), status, appointment.getNote());
     }
 
     /** The whole appointment must fit inside one of the employee's working ranges on that day. */

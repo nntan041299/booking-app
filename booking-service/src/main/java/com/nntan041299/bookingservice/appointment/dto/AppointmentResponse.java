@@ -21,5 +21,7 @@ public class AppointmentResponse {
     private LocalDateTime endAt;
     private BigDecimal price;
     private boolean paid;
+    /** {@code UPCOMING} until the appointment ends, then {@code COMPLETED}. */
+    private String status;
     private String note;
 }

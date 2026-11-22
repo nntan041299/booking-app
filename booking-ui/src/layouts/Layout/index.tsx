@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import SideBar from "@/components/SideBar";
+import CustomerLayout from "@/layouts/CustomerLayout";
 import Header from "@/components/Header";
 import { getUserInfo } from "@/service/user";
 import { setUserInfo } from "@/redux/user";
@@ -13,7 +14,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { id } = useSelector(selectUser);
+  const { id, role } = useSelector(selectUser);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -35,6 +36,10 @@ const Layout = ({ children }: LayoutProps) => {
       });
     }
   }, [dispatch, id]);
+
+  // Customers get their own shell (no admin sidebar); wait for the role so it does not flash.
+  if (!role) return <div className="min-h-screen bg-spa-canvas" />;
+  if (role === "CUSTOMER") return <CustomerLayout>{children}</CustomerLayout>;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">

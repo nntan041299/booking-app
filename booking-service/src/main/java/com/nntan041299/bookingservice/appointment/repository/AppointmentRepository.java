@@ -6,8 +6,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
+
+    /** A customer's appointments, latest first. */
+    List<Appointment> findByCustomerIdOrderByStartAtDesc(Long customerId);
 
     /** True if the employee already has an appointment overlapping [start, end). Touching ranges do not overlap. */
     @Query("""
