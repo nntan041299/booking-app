@@ -17,8 +17,13 @@ public class CurrentUserProvider {
 
     private final UserRepository userRepository;
 
+    /** The authenticated principal's username, without touching the database. */
+    public String getCurrentUsername() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
     public User getCurrentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        String username = getCurrentUsername();
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
