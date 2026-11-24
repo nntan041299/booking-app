@@ -48,6 +48,11 @@ public class Appointment extends BaseEntity {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private AppointmentStatus status = AppointmentStatus.WAITING_PAYMENT;
+
     @Column(name = "is_paid", nullable = false)
     private boolean paid;
 

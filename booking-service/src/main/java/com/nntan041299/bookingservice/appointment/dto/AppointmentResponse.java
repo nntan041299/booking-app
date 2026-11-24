@@ -21,7 +21,7 @@ public class AppointmentResponse {
     private LocalDateTime endAt;
     private BigDecimal price;
     private boolean paid;
-    /** {@code UPCOMING} until the appointment ends, then {@code COMPLETED}. */
-    private String status;
+    /** {@code WAITING_PAYMENT} until the customer pays, {@code EXPIRED} if they did not; then {@code UPCOMING} until the appointment ends, then {@code COMPLETED}. */
+    private AppointmentViewStatus status;
     private String note;
 }
