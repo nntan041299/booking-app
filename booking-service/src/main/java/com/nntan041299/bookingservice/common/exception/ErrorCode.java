@@ -42,6 +42,8 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND("00026", "Resource not found"),
     INVALID_IMAGE("00027", "Upload a PNG, JPG or WebP image up to 5 MB"),
     IMAGE_UPLOAD_FAILED("00028", "The image could not be uploaded, try again later"),
+    APPOINTMENT_NOT_FOUND("00029", "Appointment not found"),
+    APPOINTMENT_EXPIRED("00030", "This booking was not paid in time, please pick a slot again"),
     INTERNAL_ERROR("99999", "An unexpected error occurred");
 
     private final String code;
