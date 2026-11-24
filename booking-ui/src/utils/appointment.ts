@@ -116,3 +116,17 @@ export const downloadCalendarEvent = (appointment: AppointmentItem) => {
   link.click();
   URL.revokeObjectURL(url);
 };
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** "2026-11-23", the local calendar day (what the availability API expects). */
+export const dateKey = (date: Date) =>
+  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+/** "2026-11-23T10:30:00", a local date-time without a zone (what the API expects). */
+export const localIso = (date: Date) =>
+  `${dateKey(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+
+/** "10:30" */
+export const clock = (date: Date) =>
+  `${pad(date.getHours())}:${pad(date.getMinutes())}`;
