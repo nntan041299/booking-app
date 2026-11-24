@@ -5,6 +5,8 @@ import { RouteObject } from "react-router-dom";
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Home = lazy(() => import("@/pages/Home"));
 const CustomerServices = lazy(() => import("@/pages/customer/Services"));
+const Book = lazy(() => import("@/pages/customer/Book"));
+const BookConfirm = lazy(() => import("@/pages/customer/BookConfirm"));
 const Account = lazy(() => import("@/pages/Account"));
 const ManageServices = lazy(() => import("@/pages/admin/ManageServices"));
 const ServiceEdit = lazy(() => import("@/pages/admin/ServiceEdit"));
@@ -22,6 +24,14 @@ const routes: Record<string, RouteObject[]> = {
     {
       path: "/services",
       element: <CustomerServices />,
+    },
+    {
+      path: "/services/:serviceId/book",
+      element: <Book />,
+    },
+    {
+      path: "/appointments/:id/confirm",
+      element: <BookConfirm />,
     },
     {
       path: "/account",

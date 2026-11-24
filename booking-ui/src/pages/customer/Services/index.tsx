@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import Layout from "@/layouts/Layout";
 import Button from "@/components/Button";
@@ -91,6 +92,12 @@ const CustomerServices = () => {
                       {formatPrice(service.price)}
                     </span>
                   </div>
+                  <Link
+                    to={`/services/${service.id}/book`}
+                    className="inline-flex items-center justify-center min-h-11.5 rounded-[10px] bg-spa-green text-white text-[15px] font-semibold no-underline hover:bg-spa-green-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-spa-green"
+                  >
+                    Book
+                  </Link>
                 </div>
               ))}
             </div>
