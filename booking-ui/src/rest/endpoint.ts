@@ -6,6 +6,7 @@ export const ENDPOINT = {
   SIGN_UP: "booking-service/api/auth/register",
   SIGN_OUT: "booking-service/api/auth/logout",
   SERVICES: "booking-service/api/services",
+  APPOINTMENTS: "booking-service/api/appointments",
   ADMIN_SERVICES: "booking-service/api/admin/services",
   ADMIN_EMPLOYEES: "booking-service/api/admin/employees",
   ADMIN_RESOURCES: "booking-service/api/admin/resources",

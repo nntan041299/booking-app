@@ -81,6 +81,11 @@ token:
   blacklist:
     cleanup-interval-ms: ${TOKEN_BLACKLIST_CLEANUP_INTERVAL_MS:3600000} # 1 hour
 
+appointment:
+  payment-expiry:
+    check-interval-ms: ${APPOINTMENT_PAYMENT_EXPIRY_CHECK_INTERVAL_MS:60000} # 1 minute
+    window-minutes: ${APPOINTMENT_PAYMENT_WINDOW_MINUTES:5} # time to pay before a booking expires
+
 # ---------------------------------------------------------------------------
 # External clients
 # ---------------------------------------------------------------------------

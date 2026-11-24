@@ -32,6 +32,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
   "00026": "Resource not found",
   "00027": "Upload a PNG, JPG or WebP image up to 5 MB",
   "00028": "The image could not be uploaded, try again later",
+  "00029": "Appointment not found",
+  "00030": "This booking was not paid in time, please pick a slot again",
 };
 
 interface ApiErrorBody {

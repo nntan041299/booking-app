@@ -8,9 +8,14 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long>, JpaSpecificationExecutor<Employee> {
+
+    /** Active employees who offer the service, by name. */
+    @Query("select e from Employee e where e.active = true and :serviceId member of e.serviceIds order by e.fullName")
+    List<Employee> findActiveByServiceId(@Param("serviceId") Long serviceId);
 
     /** Loads the employee with a write lock held until the transaction ends; used to serialise bookings. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)

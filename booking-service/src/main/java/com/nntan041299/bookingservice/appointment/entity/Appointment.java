@@ -29,6 +29,14 @@ public class Appointment extends BaseEntity {
     @Column(name = "service_id", nullable = false)
     private Long serviceId;
 
+    /** Snapshot of the service name at booking time, so editing the service leaves past bookings as booked. */
+    @Column(name = "service_name", nullable = false, length = 100)
+    private String serviceName;
+
+    /** Snapshot of the service duration (minutes) at booking time. */
+    @Column(name = "duration_minutes", nullable = false)
+    private int durationMinutes;
+
     @Column(name = "start_at", nullable = false)
     private LocalDateTime startAt;
 
@@ -39,6 +47,11 @@ public class Appointment extends BaseEntity {
     /** Snapshot of the service price at booking time. */
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private AppointmentStatus status = AppointmentStatus.WAITING_PAYMENT;
 
     @Column(name = "is_paid", nullable = false)
     private boolean paid;

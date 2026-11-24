@@ -1,0 +1,99 @@
+/*
+ * FullCalendar, restyled to the booking design: one column per therapist, striped
+ * blocks for booked time, a plain tone outside working hours and a green block for
+ * the customer's own (draggable) booking.
+ */
+.booking-calendar .fc {
+  --fc-border-color: var(--color-spa-divider);
+  --fc-page-bg-color: #fff;
+  --fc-neutral-bg-color: var(--color-spa-canvas);
+  font-family: var(--font-sans);
+}
+
+.booking-calendar .fc-theme-standard .fc-scrollgrid {
+  border: 0;
+}
+
+.booking-calendar .fc-theme-standard td,
+.booking-calendar .fc-theme-standard th {
+  border-color: var(--color-spa-divider);
+}
+
+/* A row per 30 minutes. */
+.booking-calendar .fc-timegrid-slot {
+  height: 44px;
+}
+
+.booking-calendar .fc-timegrid-axis,
+.booking-calendar .fc-timegrid-slot-label {
+  border-color: var(--color-spa-divider);
+}
+
+.booking-calendar .fc-timegrid-slot-label-cushion {
+  font-size: 12px;
+  color: #4a5650;
+}
+
+.booking-calendar .fc-timegrid-slot-minor {
+  border-top-style: solid;
+  border-top-color: transparent;
+}
+
+.booking-calendar .fc-col-header-cell {
+  border-bottom: 1px solid var(--color-spa-line);
+  background: #fff;
+}
+
+.booking-calendar .fc-col-header-cell-cushion {
+  display: block;
+  padding: 0;
+  width: 100%;
+}
+
+.booking-calendar .fc-timegrid-col-events {
+  margin: 0 4px;
+}
+
+/* Booked by someone: striped, not draggable. */
+.booking-calendar .fc-event.spa-busy {
+  border: 1px solid #d8d0c1;
+  border-radius: 8px;
+  background: repeating-linear-gradient(
+    135deg,
+    #ece6da 0,
+    #ece6da 5px,
+    #e2dacb 5px,
+    #e2dacb 10px
+  );
+  color: var(--color-spa-text);
+  box-shadow: none;
+  cursor: default;
+}
+
+/* Outside working hours or already past. */
+.booking-calendar .fc-bg-event.spa-off {
+  background: var(--color-spa-hover);
+  opacity: 1;
+}
+
+/* The customer's own booking. */
+.booking-calendar .fc-event.spa-mine {
+  border: 0;
+  border-radius: 10px;
+  background: var(--color-spa-green);
+  color: #fff;
+  box-shadow: 0 2px 6px rgb(31 42 38 / 25%);
+  cursor: grab;
+  touch-action: none;
+}
+
+.booking-calendar .fc-event.spa-mine.fc-event-dragging,
+.booking-calendar .fc-event.spa-mine.fc-event-mirror {
+  box-shadow: 0 10px 24px rgb(31 42 38 / 35%);
+  cursor: grabbing;
+}
+
+.booking-calendar .fc-event.spa-mine:focus-visible {
+  outline: 2px solid var(--color-spa-green-800);
+  outline-offset: 2px;
+}
